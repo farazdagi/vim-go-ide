@@ -13,6 +13,7 @@ PLUGINS = """
 ack.vim https://github.com/mileszs/ack.vim
 bufexplorer https://github.com/corntrace/bufexplorer
 nerdtree https://github.com/scrooloose/nerdtree
+csapprox https://github.com/godlygeek/csapprox
 """.strip()
 
 GITHUB_ZIP = '%s/archive/master.zip'
