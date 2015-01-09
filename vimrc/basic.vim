@@ -24,6 +24,9 @@ nmap <leader>w :w!<cr>
 " (useful for handling the permission-denied error)
 command W w !sudo tee % > /dev/null
 
+" This is totally awesome - remap jj to escape in insert mode.  You'll never type jj anyway, so it's great!
+inoremap jj <esc>l
+nnoremap JJJJ <nop>
 
 "------------------------------------------------------------------------------
 " VIM user interface
@@ -31,6 +34,9 @@ command W w !sudo tee % > /dev/null
 
 " Make sure that coursor is always vertically centered on j/k moves
 set so=999
+
+" add vertical lines on columns
+set colorcolumn=80,120
 
 " Avoid garbled characters in Chinese language windows OS
 let $LANG='en'
@@ -40,6 +46,9 @@ source $VIMRUNTIME/menu.vim
 
 " Turn on the WiLd menu
 set wildmenu
+
+" Set command-line completion mode
+set wildmode=list:longest,full
 
 " Highlight current line - allows you to track cursor position more easily
 set cursorline
@@ -60,6 +69,9 @@ set ruler
 
 " Show line numbers - could be toggled on/off on-fly by pressing F6
 set number
+
+" Show (partial) commands (or size of selection in Visual mode) in the status line
+set showcmd
 
 " A buffer becomes hidden when it is abandoned
 set hid
@@ -96,6 +108,7 @@ set magic
 
 " Show matching brackets when text indicator is over them
 set showmatch
+
 " How many tenths of a second to blink when matching brackets
 set mat=2
 
@@ -140,6 +153,13 @@ set encoding=utf8
 " Use Unix as the standard file type
 set ffs=unix,dos,mac
 
+" highlight trailing space
+highlight ExtraWhitespace ctermbg=red guibg=red
+match ExtraWhitespace /\s\+$/
+autocmd BufWinEnter * match ExtraWhitespace /\s\+$/
+autocmd InsertEnter * match ExtraWhitespace /\s\+\%#\@<!$/
+autocmd InsertLeave * match ExtraWhitespace /\s\+$/
+autocmd BufWinLeave * call clearmatches()
 
 "------------------------------------------------------------------------------
 " Files, backups and undo
@@ -149,6 +169,27 @@ set ffs=unix,dos,mac
 set nobackup
 set nowb
 set noswapfile
+
+" Remember things between sessions
+"
+" '20  - remember marks for 20 previous files
+" \"50 - save 50 lines for each register
+" :20  - remember 20 items in command-line history
+" /20  - remember 20 items in search history
+" %    - remember the buffer list (if vim started without a file arg)
+" n    - set name of viminfo file
+set viminfo='20,\"50,:20,/20,%,n~/.viminfo.go
+
+" Define what to save with :mksession
+" blank - empty windows
+" buffers - all buffers not only ones in a window
+" curdir - the current directory
+" folds - including manually created ones
+" help - the help window
+" options - all options and mapping
+" winsize - window sizes
+" tabpages - all tab pages
+set sessionoptions=blank,buffers,curdir,folds,help,options,winsize,tabpages
 
 
 "------------------------------------------------------------------------------
@@ -174,7 +215,7 @@ set tw=500
 
 set ai "Auto indent
 set si "Smart indent
-set wrap "Wrap lines
+set nowrap "Don't Wrap lines (it is stupid)
 
 
 "------------------------------------------------------------------------------
@@ -219,7 +260,8 @@ map <leader>tn :tabnew<cr>
 map <leader>to :tabonly<cr>
 map <leader>tc :tabclose<cr>
 map <leader>tm :tabmove
-map <leader>t<leader> :tabnext
+map <leader>tj :tabnext
+map <leader>tk :tabprevious
 
 " Let 'tl' toggle between this and the last accessed tab
 let g:lasttab = 1
@@ -285,8 +327,13 @@ func! DeleteTrailingWS()
   %s/\s\+$//ge
   exe "normal `z"
 endfunc
+autocmd BufWrite *.go :call DeleteTrailingWS()
 autocmd BufWrite *.py :call DeleteTrailingWS()
 autocmd BufWrite *.coffee :call DeleteTrailingWS()
+
+" visual shifting (does not exit Visual mode)
+vnoremap < <gv
+vnoremap > >gv
 
 
 "------------------------------------------------------------------------------
@@ -350,6 +397,9 @@ map <leader>x :e ~/buffer.md<cr>
 " Toggle paste mode on and off
 map <leader>pp :setlocal paste!<cr>
 
+" easy way to edit reload .vimrc
+nmap <leader>V :source $MYVIMRC<cr>
+nmap <leader>v :vsp $MYVIMRC<cr>
 
 "------------------------------------------------------------------------------
 " Helper functions

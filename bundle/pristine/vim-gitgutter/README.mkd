@@ -1,0 +1,324 @@
+## vim-gitgutter
+
+A Vim plugin which shows a git diff in the 'gutter' (sign column).  It shows whether each line has been added, modified, and where lines have been removed.  You can also stage and revert individual hunks.
+
+Features:
+
+* Shows signs for added, modified, and removed lines.
+* Ensures signs are always as up to date as possible (but without running more than necessary).
+* Quick jumping between blocks of changed lines ("hunks").
+* Stage/revert/preview individual hunks.
+* Optional line highlighting.
+* Fully customisable (signs, sign column, line highlights, mappings, extra git-diff arguments, etc).
+* Can be toggled on/off.
+* Preserves signs from other plugins.
+* Easy to integrate diff stats into status line; built-in integration with [vim-airline](https://github.com/bling/vim-airline/).
+
+Constraints:
+
+* Supports git only.
+
+
+### Screenshot
+
+![screenshot](https://raw.github.com/airblade/vim-gitgutter/master/screenshot.png)
+
+In the screenshot above you can see:
+
+* Line 15 has been modified.
+* Lines 21-24 are new.
+* A line or lines were removed between lines 25 and 26.
+
+
+### Installation
+
+Before installation, please check your Vim supports signs by running `:echo has('signs')`.  `1` means you're all set; `0` means you need to install a Vim with signs support.  If you're compiling Vim yourself you need the 'big' or 'huge' feature set.  [MacVim][] supports signs.
+
+Your vim `shell` option needs to point to a POSIX-compatible shell.  For example if you use Fish, add `set shell=/bin/bash` to your vimrc.
+
+If you don't have a preferred installation method, I recommend installing [pathogen.vim][pathogen], and then simply copy and paste:
+
+```
+cd ~/.vim/bundle
+git clone git://github.com/airblade/vim-gitgutter.git
+```
+
+Or for [Vundle](https://github.com/gmarik/vundle) users:
+
+Add `Plugin 'airblade/vim-gitgutter'` to your `~/.vimrc` and then:
+
+* either within Vim: `:PluginInstall`
+* or in your shell: `vim +PluginInstall +qall`
+
+If you are on Windows you may find the command prompt pops up briefly every time vim-gitgutter runs.  You can avoid this by installing both [vim-misc](https://github.com/xolox/vim-misc) and [vim-shell](https://github.com/xolox/vim-shell).  If you have those two plugins but don't want vim-gitgutter to use them, you can opt out with `let g:gitgutter_avoid_cmd_prompt_on_windows = 0` in your `~/.vimrc`.
+
+
+### Usage
+
+You don't have to do anything: it just works.
+
+
+#### Activation
+
+You can explicitly turn vim-gitgutter off and on (defaults to on):
+
+* turn off with `:GitGutterDisable`
+* turn on with `:GitGutterEnable`
+* toggle with `:GitGutterToggle`.
+
+You can turn the signs on and off (defaults to on):
+
+* turn on with `:GitGutterSignsEnable`
+* turn off with `:GitGutterSignsDisable`
+* toggle with `:GitGutterSignsToggle`.
+
+And you can turn line highlighting on and off (defaults to off):
+
+* turn on with `:GitGutterLineHighlightsEnable`
+* turn off with `:GitGutterLineHighlightsDisable`
+* toggle with `:GitGutterLineHighlightsToggle`.
+
+Note that if you have line highlighting on and signs off, you will have an empty sign column – more accurately, a sign column with invisible signs.  This is because line highlighting requires signs and Vim always shows the sign column even if the signs are invisible.
+
+If you switch off both line highlighting and signs, you won't see the sign column.  That is unless you have set `let g:gitgutter_sign_column_always = 1` so it's always there.
+
+To keep your Vim snappy, vim-gitgutter will suppress itself when a file has more than 500 changes.  As soon as the number of changes falls below the limit vim-gitgutter will show the signs again.  You can configure the threshold with:
+
+```viml
+let g:gitgutter_max_signs = 500  " default value
+```
+
+#### Hunks
+
+You can jump between hunks:
+
+* jump to next hunk (change): `]c`
+* jump to previous hunk (change): `[c`.
+
+Both of those take a preceding count.
+
+To set your own mappings for these, for example `]h` and `[h`:
+
+```viml
+nmap ]h <Plug>GitGutterNextHunk
+nmap [h <Plug>GitGutterPrevHunk
+```
+
+You can stage or revert an individual hunk when your cursor is in it:
+
+* stage the hunk with `<Leader>hs` or
+* revert it with `<Leader>hr`.
+
+To set your own mappings for these, for example if you prefer the mnemonics hunk-add and hunk-undo:
+
+```viml
+nmap <Leader>ha <Plug>GitGutterStageHunk
+nmap <Leader>hu <Plug>GitGutterRevertHunk
+```
+
+And you can preview a hunk's changes with `<Leader>hp`.  You can of course change this mapping, e.g:
+
+```viml
+nmap <Leader>hv <Plug>GitGutterPreviewHunk
+```
+
+If you don't want vim-gitgutter to set up any mappings at all, use this:
+
+```viml
+let g:gitgutter_map_keys = 0
+```
+
+Finally, you can force vim-gitgutter to update its signs across all visible buffers with `:GitGutterAll`.
+
+See the customisation section below for how to change the defaults.
+
+
+### When are the signs updated?
+
+By default the signs are updated as follows:
+
+| Event                     | Reason for update                    | Configuration          |
+|---------------------------|--------------------------------------|------------------------|
+| Stop typing               | So the signs are real time           | `g:gitgutter_realtime` |
+| Switch buffer             | To notice change to git index        | `g:gitgutter_eager`    |
+| Switch tab                | To notice change to git index        | `g:gitgutter_eager`    |
+| Focus the GUI             | To notice change to git index        | `g:gitgutter_eager` (not gVim on Windows) |
+| Read a file into a buffer | To display initial signs             | [always]               |
+| Save a buffer             | So non-realtime signs are up to date | [always]               |
+| Change a file outside Vim | To notice `git stash`                | [always]               |
+
+The length of time Vim waits after you stop typing before it triggers the plugin is governed by the setting `updatetime`.  This defaults to `4000` milliseconds which is rather too long.  I recommend around `750` milliseconds but it depends on your system and your preferences.  Note that in terminal Vim pre-7.4.427 an `updatetime` of less than approximately `1000` milliseconds can lead to random highlighting glitches; the lower the `updatetime`, the more glitches.
+
+If you experience a lag, you can trade speed for accuracy:
+
+```viml
+let g:gitgutter_realtime = 0
+let g:gitgutter_eager = 0
+```
+
+Note the realtime updating requires Vim 7.3.105 or higher.
+
+
+### Customisation
+
+You can customise:
+
+* The sign column's colours
+* Whether or not the sign column is shown when there aren't any signs (defaults to no)
+* The signs' colours and symbols
+* Line highlights
+* Extra arguments for `git diff`
+* Key mappings
+* Whether or not to escape `grep` (default to no)
+* Whether or not vim-gitgutter is on initially (defaults to on)
+* Whether or not signs are shown (defaults to yes)
+* Whether or not line highlighting is on initially (defaults to off)
+* Whether or not vim-gitgutter runs in "realtime" (defaults to yes)
+* Whether or not vim-gitgutter runs eagerly (defaults to yes)
+
+Please note that vim-gitgutter won't override any colours or highlights you've set in your colorscheme.
+
+
+#### Sign column
+
+The background colour of the sign column is controlled by the `SignColumn` highlight group.  This will be either set in your colorscheme or Vim's default.
+
+To find out where it's set, and to what it's set, use `:verbose highlight SignColumn`.
+
+If your `SignColumn` is not set (`:highlight SignColumn` gives you `SignColumn xxx cleared`), vim-gitgutter will set it to the same as your line number column (i.e. the `LineNr` highlight group).
+
+To change your sign column's appearance, update your colorscheme or `~/.vimrc` like this:
+
+* For the same appearance as your line number column: `highlight clear SignColumn`
+* For a specific appearance on terminal Vim: `highlight SignColumn ctermbg=whatever`
+* For a specific appearance on gVim/MacVim: `highlight SignColumn guibg=whatever`
+
+By default the sign column will appear when there are signs to show and disappear when there aren't.  If you would always like the sign column to be there, add `let g:gitgutter_sign_column_always = 1` to your `~/.vimrc`.
+
+
+#### Signs' colours and symbols
+
+To customise the colours, set up the following highlight groups in your colorscheme or `~/.vimrc`:
+
+```viml
+GitGutterAdd          " an added line
+GitGutterChange       " a changed line
+GitGutterDelete       " at least one removed line
+GitGutterChangeDelete " a changed line followed by at least one removed line
+```
+
+You can either set these with `highlight GitGutterAdd {key}={arg}...` or link them to existing highlight groups with, say, `highlight link GitGutterAdd DiffAdd`.
+
+To customise the symbols, add the following to your `~/.vimrc`:
+
+```viml
+let g:gitgutter_sign_added = 'xx'
+let g:gitgutter_sign_modified = 'yy'
+let g:gitgutter_sign_removed = 'zz'
+let g:gitgutter_sign_removed_first_line = '^^'
+let g:gitgutter_sign_modified_removed = 'ww'
+```
+
+
+#### Line highlights
+
+Similarly to the signs' colours, set up the following highlight groups in your colorscheme or `~/.vimrc`:
+
+```viml
+GitGutterAddLine          " default: links to DiffAdd
+GitGutterChangeLine       " default: links to DiffChange
+GitGutterDeleteLine       " default: links to DiffDelete
+GitGutterChangeDeleteLine " default: links to GitGutterChangeLineDefault, i.e. DiffChange
+```
+
+#### Extra arguments for `git diff`
+
+If you want to pass extra arguments to `git diff`, for example to ignore whitespace, do so like this:
+
+```viml
+let g:gitgutter_diff_args = '-w'
+```
+
+#### Key mappings
+
+To disable all key mappings:
+
+```viml
+let g:gitgutter_map_keys = 0
+```
+
+See above for configuring maps for hunk-jumping and staging/reverting.
+
+
+#### Whether or not to escape `grep`
+
+If you have `grep` aliased to something which changes its output, for example `grep --color=auto -H`, you will need to tell vim-gitgutter to use raw grep:
+
+```viml
+let g:gitgutter_escape_grep = 1
+```
+
+#### To turn off vim-gitgutter by default
+
+Add `let g:gitgutter_enabled = 0` to your `~/.vimrc`.
+
+
+#### To turn off signs by default
+
+Add `let g:gitgutter_signs = 0` to your `~/.vimrc`.
+
+
+#### To turn on line highlighting by default
+
+Add `let g:gitgutter_highlight_lines = 1` to your `~/.vimrc`.
+
+
+### FAQ
+
+> Why are the colours in the sign column weird?
+
+Your colorscheme is configuring the `SignColumn` highlight group weirdly.  Please see the section above on customising the sign column.
+
+> There's a noticeable lag when vim-gitter runs; how can I avoid it?
+
+By default vim-gitgutter runs often so the signs are as accurate as possible.  However on some systems this causes a noticeable lag.  If you would like to trade a little accuracy for speed, add this to your `~/.vimrc`:
+
+```viml
+let g:gitgutter_realtime = 0
+let g:gitgutter_eager = 0
+```
+
+> What happens if I also use another plugin which uses signs (e.g. Syntastic)?
+
+Vim only allows one sign per line.  Before adding a sign to a line, vim-gitgutter checks whether a sign has already been added by somebody else.  If so it doesn't do anything.  In other words vim-gitgutter won't overwrite another plugin's signs.  It also won't remove another plugin's signs.
+
+> Why aren't any signs showing at all?
+
+Here are some things you can check:
+
+* Your git config is compatible with the version of git which your Vim is calling (`:echo system('git --version')`).
+* Your Vim supports signs (`:echo has('signs')` should give `1`).
+* Your file is being tracked by git and has unstaged, saved changes.
+* If you use the Fish shell, or another non-POSIX shell, add `set shell=/bin/bash` to your `~/.vimrc`.
+
+
+### Shameless Plug
+
+If this plugin has helped you, or you'd like to learn more about Vim, why not check out this screencast I wrote for PeepCode:
+
+* [Smash Into Vim][siv]
+
+This was one of PeepCode's all-time top three bestsellers and is now available at Pluralsight.
+
+You can read reviews on my [website][airblade].
+
+
+### Intellectual Property
+
+Copyright Andrew Stewart, AirBlade Software Ltd.  Released under the MIT licence.
+
+
+  [pathogen]: https://github.com/tpope/vim-pathogen
+  [siv]: http://pluralsight.com/training/Courses/TableOfContents/smash-into-vim
+  [airblade]: http://airbladesoftware.com/peepcode-vim
+  [macvim]: http://code.google.com/p/macvim/

@@ -14,6 +14,11 @@ ack.vim https://github.com/mileszs/ack.vim
 bufexplorer https://github.com/corntrace/bufexplorer
 nerdtree https://github.com/scrooloose/nerdtree
 csapprox https://github.com/godlygeek/csapprox
+vim-fugitive https://github.com/tpope/vim-fugitive
+gitv https://github.com/gregsexton/gitv
+nerdcommenter https://github.com/scrooloose/nerdcommenter
+vim-gitgutter https://github.com/airblade/vim-gitgutter
+syntastic https://github.com/scrooloose/syntastic
 """.strip()
 
 GITHUB_ZIP = '%s/archive/master.zip'
