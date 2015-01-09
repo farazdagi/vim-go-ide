@@ -18,7 +18,9 @@ let mapleader = ","
 let g:mapleader = ","
 
 " Fast saving
-nmap <leader>w :w!<cr>
+map <Leader>s :w<CR>
+imap <Leader>s <ESC>:w<CR>
+vmap <Leader>s <ESC><ESC>:w<CR>
 
 " :W sudo saves the file
 " (useful for handling the permission-denied error)
@@ -118,8 +120,8 @@ set novisualbell
 set t_vb=
 set tm=500
 
-" Add a bit extra margin to the left
-set foldcolumn=1
+" Make sure that extra margin on left is removed
+set foldcolumn=0
 
 " Enable Ctrl-A/Ctrl-X to work on octal and hex numbers, as well as characters
 set nrformats=octal,hex,alpha
@@ -133,7 +135,7 @@ set nrformats=octal,hex,alpha
 syntax enable
 
 try
-    colorscheme foursee
+    colorscheme desert
 catch
 endtry
 
@@ -250,10 +252,10 @@ map <C-h> <C-W>h
 map <C-l> <C-W>l
 
 " Close the current buffer (w/o closing the current window)
-map <leader>bd :Bclose<cr>
+map <leader>w :Bclose<cr>
 
 " Close all the buffers
-map <leader>ba :1,1000 bd!<cr>
+map <leader>wa :1,1000 bd!<cr>
 
 " Useful mappings for managing tabs
 map <leader>tn :tabnew<cr>

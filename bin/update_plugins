@@ -19,6 +19,7 @@ gitv https://github.com/gregsexton/gitv
 nerdcommenter https://github.com/scrooloose/nerdcommenter
 vim-gitgutter https://github.com/airblade/vim-gitgutter
 syntastic https://github.com/scrooloose/syntastic
+neocomplete.vim https://github.com/Shougo/neocomplete.vim
 """.strip()
 
 GITHUB_ZIP = '%s/archive/master.zip'
