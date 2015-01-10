@@ -10,6 +10,7 @@ from os import path
 
 #--- Globals ----------------------------------------------
 PLUGINS = """
+bclose.vim https://github.com/rbgrouleff/bclose.vim
 ack.vim https://github.com/mileszs/ack.vim
 bufexplorer https://github.com/corntrace/bufexplorer
 nerdtree https://github.com/scrooloose/nerdtree
@@ -20,6 +21,8 @@ nerdcommenter https://github.com/scrooloose/nerdcommenter
 vim-gitgutter https://github.com/airblade/vim-gitgutter
 syntastic https://github.com/scrooloose/syntastic
 neocomplete.vim https://github.com/Shougo/neocomplete.vim
+neosnippet.vim https://github.com/Shougo/neosnippet.vim
+vim-go https://github.com/fatih/vim-go
 """.strip()
 
 GITHUB_ZIP = '%s/archive/master.zip'

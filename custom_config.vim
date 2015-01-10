@@ -25,3 +25,13 @@ nmap <silent> <leader>n :silent :nohlsearch<cr>
 
 " Make sure that CTRL-A (used by gnu screen) is redefined
 noremap <leader>inc <C-A>
+
+" Go related mappings
+au FileType go nmap <Leader>i <Plug>(go-info)
+au FileType go nmap <Leader>doc <Plug>(go-doc)
+au FileType go nmap <Leader>r <Plug>(go-run)
+au FileType go nmap <Leader>b <Plug>(go-build)
+au FileType go nmap <Leader>t <Plug>(go-test)
+au FileType go nmap gd <Plug>(go-def-tab)
+
+

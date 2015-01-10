@@ -18,9 +18,9 @@ let mapleader = ","
 let g:mapleader = ","
 
 " Fast saving
-map <Leader>s :w<CR>
-imap <Leader>s <ESC>:w<CR>
-vmap <Leader>s <ESC><ESC>:w<CR>
+map <Leader>w :w<CR>
+imap <Leader>w <ESC>:w<CR>
+vmap <Leader>w <ESC><ESC>:w<CR>
 
 " :W sudo saves the file
 " (useful for handling the permission-denied error)
@@ -252,10 +252,10 @@ map <C-h> <C-W>h
 map <C-l> <C-W>l
 
 " Close the current buffer (w/o closing the current window)
-map <leader>w :Bclose<cr>
+map <leader>bd :Bclose<cr>
 
 " Close all the buffers
-map <leader>wa :1,1000 bd!<cr>
+map <leader>bda :1,1000 bd!<cr>
 
 " Useful mappings for managing tabs
 map <leader>tn :tabnew<cr>
@@ -301,7 +301,7 @@ set viminfo^=%
 set laststatus=2
 
 " Format the status line
-set statusline=\ %{HasPaste()}%F%m%r%h\ %w\ \ CWD:\ %r%{getcwd()}%h\ \ \ Line:\ %l
+" set statusline=\ %{HasPaste()}%F%m%r%h\ %w\ \ CWD:\ %r%{getcwd()}%h\ \ \ Line:\ %l
 
 
 "------------------------------------------------------------------------------
@@ -347,7 +347,7 @@ vnoremap > >gv
 vnoremap <silent> gv :call VisualSelection('gv', '')<CR>
 
 " Open Ack and put the cursor in the right position
-map <leader>g :Ack
+map <leader>a :Ack
 
 " When you press <leader>r you can search and replace the selected text
 vnoremap <silent> <leader>r :call VisualSelection('replace', '')<CR>
@@ -440,25 +440,4 @@ function! HasPaste()
         return 'PASTE MODE  '
     en
     return ''
-endfunction
-
-" Don't close window, when deleting a buffer
-command! Bclose call <SID>BufcloseCloseIt()
-function! <SID>BufcloseCloseIt()
-   let l:currentBufNum = bufnr("%")
-   let l:alternateBufNum = bufnr("#")
-
-   if buflisted(l:alternateBufNum)
-     buffer #
-   else
-     bnext
-   endif
-
-   if bufnr("%") == l:currentBufNum
-     new
-   endif
-
-   if buflisted(l:currentBufNum)
-     execute("bdelete! ".l:currentBufNum)
-   endif
 endfunction
