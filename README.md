@@ -24,6 +24,6 @@ In order for the [amazing vim-go](https://github.com/fatih/vim-go) to be most us
 
 ### 4. End-result:
 
-
+![Screenshot](https://raw.githubusercontent.com/farazdagi/vim-go-ide/master/screenshot.png)
 
 Yep, that's it!
