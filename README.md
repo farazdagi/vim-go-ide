@@ -16,7 +16,7 @@ Remember that your system's Vim config files remain untouched? During installati
 
 And btw, nothing prevents you from creation of a handy alias in your `.zshrc`:
 
-   alias vimgo='vim -u ~/.vimrc.go'
+    alias vimgo='vim -u ~/.vimrc.go'
 
 ### 3. Setup necessary go tools (godep, gocode, godoc etc):
 
