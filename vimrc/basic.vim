@@ -27,7 +27,7 @@ vmap <Leader>w <ESC><ESC>:w<CR>
 command W w !sudo tee % > /dev/null
 
 " This is totally awesome - remap jj to escape in insert mode.  You'll never type jj anyway, so it's great!
-inoremap jj <esc>l
+inoremap jj <esc>
 nnoremap JJJJ <nop>
 
 "------------------------------------------------------------------------------
