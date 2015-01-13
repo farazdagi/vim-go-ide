@@ -23,6 +23,7 @@ syntastic https://github.com/scrooloose/syntastic
 neocomplete.vim https://github.com/Shougo/neocomplete.vim
 neosnippet.vim https://github.com/Shougo/neosnippet.vim
 vim-go https://github.com/fatih/vim-go
+auto-pairs https://github.com/jiangmiao/auto-pairs
 """.strip()
 
 GITHUB_ZIP = '%s/archive/master.zip'
