@@ -10,5 +10,5 @@ source ~/.vim_go_runtime/custom_config.vim
 catch
 endtry' > ~/.vimrc.go
 
-echo "Installed w/o any issues! Start producing you Go magic now :-)"
+echo "Installed w/o any issues! Start producing your Go magic now :-)"
 echo "Hint: vim -u ~/.vimrc.go"
