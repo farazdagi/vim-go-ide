@@ -10,7 +10,7 @@
 "
 "============================================================================
 
-if exists("g:loaded_syntastic_yaml_yamlxs_checker")
+if exists('g:loaded_syntastic_yaml_yamlxs_checker')
     finish
 endif
 let g:loaded_syntastic_yaml_yamlxs_checker = 1
@@ -29,7 +29,7 @@ function! SyntaxCheckers_yaml_yamlxs_IsAvailable() dict
 
     " don't call executable() here, to allow things like
     " let g:syntastic_perl_interpreter='/usr/bin/env perl'
-    silent! call system(self.getExecEscaped() . ' ' . s:Modules() . ' -e ' . syntastic#util#shescape('exit(0)'))
+    silent! call syntastic#util#system(self.getExecEscaped() . ' ' . s:Modules() . ' -e ' . syntastic#util#shescape('exit(0)'))
     return v:shell_error == 0
 endfunction
 
@@ -48,7 +48,7 @@ function! SyntaxCheckers_yaml_yamlxs_GetLocList() dict
         \ 'makeprg': makeprg,
         \ 'errorformat': errorformat,
         \ 'postprocess': ['compressWhitespace'],
-        \ 'defaults': {'bufnr': bufnr("")} })
+        \ 'defaults': {'bufnr': bufnr('')} })
 endfunction
 
 function s:Modules()

@@ -1,5 +1,5 @@
 "============================================================================
-"File:        shellcheck.vim
+"File:        stylint.vim
 "Description: Syntax checking plugin for syntastic.vim
 "Maintainer:  LCD 47 <lcd047 at gmail dot com>
 "License:     This program is free software. It comes without any warranty,
@@ -10,16 +10,34 @@
 "
 "============================================================================
 
-if exists("g:loaded_syntastic_zsh_shellcheck_checker")
+if exists('g:loaded_syntastic_stylus_stylint_checker')
     finish
 endif
-let g:loaded_syntastic_zsh_shellcheck_checker = 1
+let g:loaded_syntastic_stylus_stylint_checker = 1
 
-runtime! syntax_checkers/sh/*.vim
+let s:save_cpo = &cpo
+set cpo&vim
+
+function! SyntaxCheckers_stylus_stylint_GetLocList() dict
+    let makeprg = self.makeprgBuild({})
+
+    let errorformat =
+        \ '%WWarning: %m,' .
+        \ '%EError: %m,' .
+        \ '%CFile: %f,' .
+        \ '%CLine: %l:%.%#'
+
+    return SyntasticMake({
+        \ 'makeprg': makeprg,
+        \ 'errorformat': errorformat,
+        \ 'subtype': 'Style' })
+endfunction
 
 call g:SyntasticRegistry.CreateAndRegisterChecker({
-    \ 'filetype': 'zsh',
-    \ 'name': 'shellcheck',
-    \ 'redirect': 'sh/shellcheck'})
+    \ 'filetype': 'stylus',
+    \ 'name': 'stylint'})
+
+let &cpo = s:save_cpo
+unlet s:save_cpo
 
 " vim: set sw=4 sts=4 et fdm=marker:

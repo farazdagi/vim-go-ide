@@ -1,4 +1,4 @@
-if exists("g:loaded_syntastic_c_autoload") || !exists("g:loaded_syntastic_plugin")
+if exists('g:loaded_syntastic_c_autoload') || !exists('g:loaded_syntastic_plugin')
     finish
 endif
 let g:loaded_syntastic_c_autoload = 1
@@ -10,19 +10,19 @@ set cpo&vim
 
 " convenience function to determine the 'null device' parameter
 " based on the current operating system
-function! syntastic#c#NullOutput() " {{{2
+function! syntastic#c#NullOutput() abort " {{{2
     let known_os = has('unix') || has('mac') || syntastic#util#isRunningWindows()
     return known_os ? '-o ' . syntastic#util#DevNull() : ''
 endfunction " }}}2
 
 " read additional compiler flags from the given configuration file
 " the file format and its parsing mechanism is inspired by clang_complete
-function! syntastic#c#ReadConfig(file) " {{{2
+function! syntastic#c#ReadConfig(file) abort " {{{2
     call syntastic#log#debug(g:_SYNTASTIC_DEBUG_CHECKERS, 'ReadConfig: looking for', a:file)
 
     " search upwards from the current file's directory
-    let config = findfile(a:file, '.;')
-    if config == ''
+    let config = syntastic#util#findFileInParent(a:file, expand('%:p:h', 1))
+    if config ==# ''
         call syntastic#log#debug(g:_SYNTASTIC_DEBUG_CHECKERS, 'ReadConfig: file not found')
         return ''
     endif
@@ -44,7 +44,7 @@ function! syntastic#c#ReadConfig(file) " {{{2
     endtry
 
     " filter out empty lines and comments
-    call filter(lines, 'v:val !~ ''\v^(\s*#|$)''')
+    call filter(lines, 'v:val !~# ''\v^(\s*#|$)''')
 
     " remove leading and trailing spaces
     call map(lines, 'substitute(v:val, ''\m^\s\+'', "", "")')
@@ -53,7 +53,7 @@ function! syntastic#c#ReadConfig(file) " {{{2
     let parameters = []
     for line in lines
         let matches = matchstr(line, '\m\C^\s*-I\s*\zs.\+')
-        if matches != ''
+        if matches !=# ''
             " this one looks like an absolute path
             if match(matches, '\m^\%(/\|\a:\)') != -1
                 call add(parameters, '-I' . matches)
@@ -69,7 +69,7 @@ function! syntastic#c#ReadConfig(file) " {{{2
 endfunction " }}}2
 
 " GetLocList() for C-like compilers
-function! syntastic#c#GetLocList(filetype, subchecker, options) " {{{2
+function! syntastic#c#GetLocList(filetype, subchecker, options) abort " {{{2
     try
         let flags = s:_get_cflags(a:filetype, a:subchecker, a:options)
     catch /\m\C^Syntastic: skip checks$/
@@ -96,7 +96,7 @@ endfunction " }}}2
 " Private functions {{{1
 
 " initialize c/cpp syntax checker handlers
-function! s:_init() " {{{2
+function! s:_init() abort " {{{2
     let s:handlers = []
     let s:cflags = {}
 
@@ -118,22 +118,22 @@ function! s:_init() " {{{2
 endfunction " }}}2
 
 " register a handler dictionary object
-function! s:_registerHandler(regex, function, args) " {{{2
+function! s:_registerHandler(regex, function, args) abort " {{{2
     let handler = {}
-    let handler["regex"] = a:regex
-    let handler["func"] = function(a:function)
-    let handler["args"] = a:args
+    let handler['regex'] = a:regex
+    let handler['func'] = function(a:function)
+    let handler['args'] = a:args
     call add(s:handlers, handler)
 endfunction " }}}2
 
 " try to find library with 'pkg-config'
 " search possible libraries from first to last given
 " argument until one is found
-function! s:_checkPackage(name, ...) " {{{2
+function! s:_checkPackage(name, ...) abort " {{{2
     if executable('pkg-config')
         if !has_key(s:cflags, a:name)
             for pkg in a:000
-                let pkg_flags = system('pkg-config --cflags ' . pkg)
+                let pkg_flags = syntastic#util#system('pkg-config --cflags ' . pkg)
                 " since we cannot necessarily trust the pkg-config exit code
                 " we have to check for an error output as well
                 if v:shell_error == 0 && pkg_flags !~? 'not found'
@@ -150,10 +150,10 @@ function! s:_checkPackage(name, ...) " {{{2
 endfunction " }}}2
 
 " try to find PHP includes with 'php-config'
-function! s:_checkPhp() " {{{2
+function! s:_checkPhp() abort " {{{2
     if executable('php-config')
         if !has_key(s:cflags, 'php')
-            let s:cflags['php'] = system('php-config --includes')
+            let s:cflags['php'] = syntastic#util#system('php-config --includes')
             let s:cflags['php'] = ' ' . substitute(s:cflags['php'], "\n", '', '')
         endif
         return s:cflags['php']
@@ -162,10 +162,10 @@ function! s:_checkPhp() " {{{2
 endfunction " }}}2
 
 " try to find the python headers with distutils
-function! s:_checkPython() " {{{2
+function! s:_checkPython() abort " {{{2
     if executable('python')
         if !has_key(s:cflags, 'python')
-            let s:cflags['python'] = system('python -c ''from distutils import ' .
+            let s:cflags['python'] = syntastic#util#system('python -c ''from distutils import ' .
                 \ 'sysconfig; import sys; sys.stdout.write(sysconfig.get_python_inc())''')
             let s:cflags['python'] = substitute(s:cflags['python'], "\n", '', '')
             let s:cflags['python'] = ' -I' . s:cflags['python']
@@ -176,10 +176,10 @@ function! s:_checkPython() " {{{2
 endfunction " }}}2
 
 " try to find the ruby headers with 'rbconfig'
-function! s:_checkRuby() " {{{2
+function! s:_checkRuby() abort " {{{2
     if executable('ruby')
         if !has_key(s:cflags, 'ruby')
-            let s:cflags['ruby'] = system('ruby -r rbconfig -e ' .
+            let s:cflags['ruby'] = syntastic#util#system('ruby -r rbconfig -e ' .
                 \ '''puts RbConfig::CONFIG["rubyhdrdir"] || RbConfig::CONFIG["archdir"]''')
             let s:cflags['ruby'] = substitute(s:cflags['ruby'], "\n", '', '')
             let s:cflags['ruby'] = ' -I' . s:cflags['ruby']
@@ -194,7 +194,7 @@ endfunction " }}}2
 " Utilities {{{1
 
 " resolve checker-related user variables
-function! s:_get_checker_var(scope, filetype, subchecker, name, default) " {{{2
+function! s:_get_checker_var(scope, filetype, subchecker, name, default) abort " {{{2
     let prefix = a:scope . ':' . 'syntastic_'
     if exists(prefix . a:filetype . '_' . a:subchecker . '_' . a:name)
         return {a:scope}:syntastic_{a:filetype}_{a:subchecker}_{a:name}
@@ -206,7 +206,7 @@ function! s:_get_checker_var(scope, filetype, subchecker, name, default) " {{{2
 endfunction " }}}2
 
 " resolve user CFLAGS
-function! s:_get_cflags(ft, ck, opts) " {{{2
+function! s:_get_cflags(ft, ck, opts) abort " {{{2
     " determine whether to parse header files as well
     if has_key(a:opts, 'header_names') && expand('%', 1) =~? a:opts['header_names']
         if s:_get_checker_var('g', a:ft, a:ck, 'check_header', 0)
@@ -223,24 +223,7 @@ function! s:_get_cflags(ft, ck, opts) " {{{2
 
     " check if the user manually set some cflags
     let b_cflags = s:_get_checker_var('b', a:ft, a:ck, 'cflags', '')
-    if b_cflags == ''
-        " check whether to search for include files at all
-        if !s:_get_checker_var('g', a:ft, a:ck, 'no_include_search', 0)
-            if a:ft ==# 'c' || a:ft ==# 'cpp'
-                " refresh the include file search if desired
-                if s:_get_checker_var('g', a:ft, a:ck, 'auto_refresh_includes', 0)
-                    let flags .= ' ' . s:_search_headers()
-                else
-                    " search for header includes if not cached already
-                    if !exists('b:syntastic_' . a:ft . '_includes')
-                        let b:syntastic_{a:ft}_includes = s:_search_headers()
-                    endif
-                    let flags .= ' ' . b:syntastic_{a:ft}_includes
-                endif
-            endif
-        endif
-    else
-        " user-defined cflags
+    if b_cflags !=# ''
         let flags .= ' ' . b_cflags
     endif
 
@@ -248,12 +231,25 @@ function! s:_get_cflags(ft, ck, opts) " {{{2
     let config_file = s:_get_checker_var('g', a:ft, a:ck, 'config_file', '.syntastic_' . a:ft . '_config')
     let flags .= ' ' . syntastic#c#ReadConfig(config_file)
 
+    if b_cflags ==# '' && (a:ft ==# 'c' || a:ft ==# 'cpp') && !s:_get_checker_var('g', a:ft, a:ck, 'no_include_search', 0)
+        " refresh the include file search if desired
+        if s:_get_checker_var('g', a:ft, a:ck, 'auto_refresh_includes', 0)
+            let flags .= ' ' . s:_search_headers()
+        else
+            " search for header includes if not cached already
+            if !exists('b:syntastic_' . a:ft . '_includes')
+                let b:syntastic_{a:ft}_includes = s:_search_headers()
+            endif
+            let flags .= ' ' . b:syntastic_{a:ft}_includes
+        endif
+    endif
+
     return flags
 endfunction " }}}2
 
 " get the gcc include directory argument depending on the default
 " includes and the optional user-defined 'g:syntastic_c_include_dirs'
-function! s:_get_include_dirs(filetype) " {{{2
+function! s:_get_include_dirs(filetype) abort " {{{2
     let include_dirs = []
 
     if a:filetype =~# '\v^%(c|cpp|objc|objcpp)$' &&
@@ -271,7 +267,7 @@ endfunction " }}}2
 
 " search the first 100 lines for include statements that are
 " given in the handlers dictionary
-function! s:_search_headers() " {{{2
+function! s:_search_headers() abort " {{{2
     let includes = ''
     let files = []
     let found = []
@@ -280,15 +276,15 @@ function! s:_search_headers() " {{{2
     " search current buffer
     for line in lines
         let file = matchstr(line, '\m"\zs\S\+\ze"')
-        if file != ''
+        if file !=# ''
             call add(files, file)
             continue
         endif
 
         for handler in s:handlers
-            if line =~# handler["regex"]
-                let includes .= call(handler["func"], handler["args"])
-                call add(found, handler["regex"])
+            if line =~# handler['regex']
+                let includes .= call(handler['func'], handler['args'])
+                call add(found, handler['regex'])
                 break
             endif
         endfor
@@ -296,7 +292,7 @@ function! s:_search_headers() " {{{2
 
     " search included headers
     for hfile in files
-        if hfile != ''
+        if hfile !=# ''
             let filename = expand('%:p:h', 1) . syntastic#util#Slash() . hfile
 
             try
@@ -308,14 +304,14 @@ function! s:_search_headers() " {{{2
             call filter(lines, 'v:val =~# ''\m^\s*#\s*include''')
 
             for handler in s:handlers
-                if index(found, handler["regex"]) != -1
+                if index(found, handler['regex']) != -1
                     continue
                 endif
 
                 for line in lines
-                    if line =~# handler["regex"]
-                        let includes .= call(handler["func"], handler["args"])
-                        call add(found, handler["regex"])
+                    if line =~# handler['regex']
+                        let includes .= call(handler['func'], handler['args'])
+                        call add(found, handler['regex'])
                         break
                     endif
                 endfor

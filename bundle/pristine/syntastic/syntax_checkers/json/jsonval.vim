@@ -9,7 +9,7 @@
 "             See http://sam.zoy.org/wtfpl/COPYING for more details.
 "============================================================================
 
-if exists("g:loaded_syntastic_json_jsonval_checker")
+if exists('g:loaded_syntastic_json_jsonval_checker')
     finish
 endif
 let g:loaded_syntastic_json_jsonval_checker = 1
@@ -22,7 +22,7 @@ function! SyntaxCheckers_json_jsonval_GetLocList() dict
     let makeprg = self.makeprgBuild({})
 
     let errorformat =
-        \ '%E%f:\ %m\ at\ line\ %l,' .
+        \ '%E%f: %m at line %l,' .
         \ '%-G%.%#'
 
     return SyntasticMake({

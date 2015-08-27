@@ -10,7 +10,7 @@
 "
 "============================================================================
 
-if exists("g:loaded_syntastic_ruby_mri_checker")
+if exists('g:loaded_syntastic_ruby_mri_checker')
     finish
 endif
 let g:loaded_syntastic_ruby_mri_checker = 1
@@ -36,7 +36,9 @@ function! SyntaxCheckers_ruby_mri_GetHighlightRegex(i)
 endfunction
 
 function! SyntaxCheckers_ruby_mri_GetLocList() dict
-    let makeprg = self.makeprgBuild({ 'args_after': '-w -T1 -c' })
+    let makeprg = self.makeprgBuild({
+        \ 'args': '-w -T1',
+        \ 'args_after': '-c' })
 
     "this is a hack to filter out a repeated useless warning in rspec files
     "containing lines like

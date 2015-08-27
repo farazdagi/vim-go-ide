@@ -10,7 +10,7 @@
 "
 "============================================================================
 
-if exists("g:loaded_syntastic_ruby_rubocop_checker")
+if exists('g:loaded_syntastic_ruby_rubocop_checker')
     finish
 endif
 let g:loaded_syntastic_ruby_rubocop_checker = 1
@@ -22,15 +22,11 @@ function! SyntaxCheckers_ruby_rubocop_IsAvailable() dict
     if !executable(self.getExec())
         return 0
     endif
-
-    let ver = syntastic#util#getVersion(self.getExecEscaped() . ' --version')
-    call self.log(self.getExec() . ' version =', ver)
-
-    return syntastic#util#versionIsAtLeast(ver, [0, 9, 0])
+    return syntastic#util#versionIsAtLeast(self.getVersion(), [0, 12, 0])
 endfunction
 
 function! SyntaxCheckers_ruby_rubocop_GetLocList() dict
-    let makeprg = self.makeprgBuild({ 'args_after': '--format emacs --silent' })
+    let makeprg = self.makeprgBuild({ 'args_after': '--format emacs' })
 
     let errorformat = '%f:%l:%c: %t: %m'
 

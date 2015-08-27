@@ -1,4 +1,4 @@
-if exists("g:loaded_syntastic_preprocess_autoload") || !exists("g:loaded_syntastic_plugin")
+if exists('g:loaded_syntastic_preprocess_autoload') || !exists('g:loaded_syntastic_plugin')
     finish
 endif
 let g:loaded_syntastic_preprocess_autoload = 1
@@ -8,19 +8,19 @@ set cpo&vim
 
 " Public functions {{{1
 
-function! syntastic#preprocess#cabal(errors) " {{{2
+function! syntastic#preprocess#cabal(errors) abort " {{{2
     let out = []
     let star = 0
     for err in a:errors
         if star
-            if err == ''
+            if err ==# ''
                 let star = 0
             else
                 let out[-1] .= ' ' . err
             endif
         else
             call add(out, err)
-            if err =~ '\m^*\s'
+            if err =~# '\m^*\s'
                 let star = 1
             endif
         endif
@@ -28,7 +28,7 @@ function! syntastic#preprocess#cabal(errors) " {{{2
     return out
 endfunction " }}}2
 
-function! syntastic#preprocess#checkstyle(errors) " {{{2
+function! syntastic#preprocess#checkstyle(errors) abort " {{{2
     let out = []
     let fname = expand('%', 1)
     for err in a:errors
@@ -55,26 +55,16 @@ function! syntastic#preprocess#checkstyle(errors) " {{{2
     return out
 endfunction " }}}2
 
-function! syntastic#preprocess#cppcheck(errors) " {{{2
+function! syntastic#preprocess#cppcheck(errors) abort " {{{2
     return map(copy(a:errors), 'substitute(v:val, ''\v^\[[^]]+\]\zs( -\> \[[^]]+\])+\ze:'', "", "")')
 endfunction " }}}2
 
-" @vimlint(EVL102, 1, l:true)
-" @vimlint(EVL102, 1, l:false)
-" @vimlint(EVL102, 1, l:null)
-function! syntastic#preprocess#flow(errors) " {{{2
-    " JSON artifacts
-    let true = 1
-    let false = 0
-    let null = ''
-
-    " A hat tip to Marc Weber for this trick
-    " http://stackoverflow.com/questions/17751186/iterating-over-a-string-in-vimscript-or-parse-a-json-file/19105763#19105763
-    try
-        let errs = eval(join(a:errors, ''))
-    catch
-        let errs = {}
-    endtry
+function! syntastic#preprocess#flow(errors) abort " {{{2
+    let idx = 0
+    while idx < len(a:errors) && a:errors[idx][0] !=# '{'
+        let idx += 1
+    endwhile
+    let errs = s:_decode_JSON(join(a:errors[idx :], ''))
 
     let out = []
     if type(errs) == type({}) && has_key(errs, 'errors') && type(errs['errors']) == type([])
@@ -88,7 +78,7 @@ function! syntastic#preprocess#flow(errors) " {{{2
                         \ m['path'] . ':' .
                         \ m['line'] . ':' .
                         \ m['start'] . ':' .
-                        \ (m['line'] ==# m['endline'] ? m['end'] . ':' : '') .
+                        \ (m['line'] ==# m['endline'] && str2nr(m['end']) > 0 ? m['end'] . ':' : '') .
                         \ ' ' . m['descr']
 
                     if len(t)
@@ -103,31 +93,35 @@ function! syntastic#preprocess#flow(errors) " {{{2
 
                     call add(out, msg)
                 catch /\m^Vim\%((\a\+)\)\=:E716/
-                    call syntastic#log#warn('checker javascript/flow: unknown error format')
+                    call syntastic#log#warn('checker javascript/flow: unrecognized error format')
                     let out = []
                     break
                 endtry
             else
-                call syntastic#log#warn('checker javascript/flow: unknown error format')
+                call syntastic#log#warn('checker javascript/flow: unrecognized error format')
                 let out = []
                 break
             endif
         endfor
     else
-        call syntastic#log#warn('checker javascript/flow: unknown error format')
+        call syntastic#log#warn('checker javascript/flow: unrecognized error format')
     endif
 
     return out
 endfunction " }}}2
-" @vimlint(EVL102, 0, l:true)
-" @vimlint(EVL102, 0, l:false)
-" @vimlint(EVL102, 0, l:null)
 
-function! syntastic#preprocess#killEmpty(errors) " {{{2
-    return filter(copy(a:errors), 'v:val != ""')
+function! syntastic#preprocess#iconv(errors) abort " {{{2
+    return
+        \ has('iconv') && &encoding !=# '' && &encoding !=# 'utf-8' ?
+        \       map(a:errors, 'iconv(v:val, "utf-8", &encoding)') :
+        \       a:errors
 endfunction " }}}2
 
-function! syntastic#preprocess#perl(errors) " {{{2
+function! syntastic#preprocess#killEmpty(errors) abort " {{{2
+    return filter(copy(a:errors), 'v:val !=# ""')
+endfunction " }}}2
+
+function! syntastic#preprocess#perl(errors) abort " {{{2
     let out = []
 
     for e in a:errors
@@ -140,72 +134,57 @@ function! syntastic#preprocess#perl(errors) " {{{2
     return syntastic#util#unique(out)
 endfunction " }}}2
 
-" @vimlint(EVL102, 1, l:true)
-" @vimlint(EVL102, 1, l:false)
-" @vimlint(EVL102, 1, l:null)
-function! syntastic#preprocess#prospector(errors) " {{{2
-    " JSON artifacts
-    let true = 1
-    let false = 0
-    let null = ''
-
-    " A hat tip to Marc Weber for this trick
-    " http://stackoverflow.com/questions/17751186/iterating-over-a-string-in-vimscript-or-parse-a-json-file/19105763#19105763
-    try
-        let errs = eval(join(a:errors, ''))
-    catch
-        let errs = {}
-    endtry
+function! syntastic#preprocess#prospector(errors) abort " {{{2
+    let errs = s:_decode_JSON(join(a:errors, ''))
 
     let out = []
-    if type(errs) == type({}) && has_key(errs, 'messages') && type(errs['messages']) == type([])
-        for e in errs['messages']
-            if type(e) == type({})
-                try
-                    if e['source'] ==# 'pylint'
-                        let e['location']['character'] += 1
-                    endif
+    if type(errs) == type({}) && has_key(errs, 'messages')
+        if type(errs['messages']) == type([])
+            for e in errs['messages']
+                if type(e) == type({})
+                    try
+                        if e['source'] ==# 'pylint'
+                            let e['location']['character'] += 1
+                        endif
 
-                    let msg =
-                        \ e['location']['path'] . ':' .
-                        \ e['location']['line'] . ':' .
-                        \ e['location']['character'] . ': ' .
-                        \ e['code'] . ' ' .
-                        \ e['message'] . ' ' .
-                        \ '[' . e['source'] . ']'
+                        let msg =
+                            \ e['location']['path'] . ':' .
+                            \ e['location']['line'] . ':' .
+                            \ e['location']['character'] . ': ' .
+                            \ e['code'] . ' ' .
+                            \ e['message'] . ' ' .
+                            \ '[' . e['source'] . ']'
 
-                    call add(out, msg)
-                catch /\m^Vim\%((\a\+)\)\=:E716/
-                    call syntastic#log#warn('checker python/prospector: unknown error format')
+                        call add(out, msg)
+                    catch /\m^Vim\%((\a\+)\)\=:E716/
+                        call syntastic#log#warn('checker python/prospector: unrecognized error format')
+                        let out = []
+                        break
+                    endtry
+                else
+                    call syntastic#log#warn('checker python/prospector: unrecognized error format')
                     let out = []
                     break
-                endtry
-            else
-                call syntastic#log#warn('checker python/prospector: unknown error format')
-                let out = []
-                break
-            endif
-        endfor
-    else
-        call syntastic#log#warn('checker python/prospector: unknown error format')
+                endif
+            endfor
+        else
+            call syntastic#log#warn('checker python/prospector: unrecognized error format')
+        endif
     endif
 
     return out
 endfunction " }}}2
-" @vimlint(EVL102, 0, l:true)
-" @vimlint(EVL102, 0, l:false)
-" @vimlint(EVL102, 0, l:null)
 
-function! syntastic#preprocess#rparse(errors) " {{{2
+function! syntastic#preprocess#rparse(errors) abort " {{{2
     let errlist = copy(a:errors)
 
     " remove uninteresting lines and handle continuations
     let i = 0
     while i < len(errlist)
-        if i > 0 && errlist[i][:1] == '  ' && errlist[i] !~ '\m\s\+\^$'
+        if i > 0 && errlist[i][:1] ==# '  ' && errlist[i] !~# '\m\s\+\^$'
             let errlist[i-1] .= errlist[i][1:]
             call remove(errlist, i)
-        elseif errlist[i] !~ '\m^\(Lint:\|Lint checking:\|Error in\) '
+        elseif errlist[i] !~# '\m^\(Lint:\|Lint checking:\|Error in\) '
             call remove(errlist, i)
         else
             let i += 1
@@ -222,7 +201,7 @@ function! syntastic#preprocess#rparse(errors) " {{{2
                     call add(out, 'E:' . fname . ':' . line . ': ' . parts[1])
                 endfor
             endif
-            if len(parts) >= 5 && parts[4] != ''
+            if len(parts) >= 5 && parts[4] !=# ''
                 call add(out, 'E:' . fname . ':0: ' . parts[1] . ' - ' . parts[4] . ' messages not shown')
             endif
         elseif match(e, '\m^Lint checking: ') == 0
@@ -235,11 +214,11 @@ function! syntastic#preprocess#rparse(errors) " {{{2
     return out
 endfunction " }}}2
 
-function! syntastic#preprocess#tslint(errors) " {{{2
+function! syntastic#preprocess#tslint(errors) abort " {{{2
     return map(copy(a:errors), 'substitute(v:val, ''\m^\(([^)]\+)\)\s\(.\+\)$'', ''\2 \1'', "")')
 endfunction " }}}2
 
-function! syntastic#preprocess#validator(errors) " {{{2
+function! syntastic#preprocess#validator(errors) abort " {{{2
     let out = []
     for e in a:errors
         let parts = matchlist(e, '\v^"([^"]+)"(.+)')
@@ -253,6 +232,78 @@ function! syntastic#preprocess#validator(errors) " {{{2
     endfor
     return out
 endfunction " }}}2
+
+function! syntastic#preprocess#vint(errors) abort " {{{2
+    let errs = s:_decode_JSON(join(a:errors, ''))
+
+    let out = []
+    if type(errs) == type([])
+        for e in errs
+            if type(e) == type({})
+                try
+                    let msg =
+                        \ e['file_path'] . ':' .
+                        \ e['line_number'] . ':' .
+                        \ e['column_number'] . ':' .
+                        \ e['severity'][0] . ': ' .
+                        \ e['description'] . ' (' .
+                        \ e['policy_name'] . ')'
+
+                    call add(out, msg)
+                catch /\m^Vim\%((\a\+)\)\=:E716/
+                    call syntastic#log#warn('checker vim/vint: unrecognized error format')
+                    let out = []
+                    break
+                endtry
+            else
+                call syntastic#log#warn('checker vim/vint: unrecognized error format')
+                let out = []
+                break
+            endif
+        endfor
+    else
+        call syntastic#log#warn('checker vim/vint: unrecognized error format')
+    endif
+
+    return out
+endfunction " }}}2
+
+" }}}1
+
+" Private functions {{{1
+
+" @vimlint(EVL102, 1, l:true)
+" @vimlint(EVL102, 1, l:false)
+" @vimlint(EVL102, 1, l:null)
+function! s:_decode_JSON(json) abort " {{{2
+    if a:json ==# ''
+        return []
+    endif
+
+    " The following is inspired by https://github.com/MarcWeber/vim-addon-manager and
+    " http://stackoverflow.com/questions/17751186/iterating-over-a-string-in-vimscript-or-parse-a-json-file/19105763#19105763
+    " A hat tip to Marc Weber for this trick
+    if substitute(a:json, '\v\"%(\\.|[^"\\])*\"|true|false|null|[+-]?\d+%(\.\d+%([Ee][+-]?\d+)?)?', '', 'g') !~# "[^,:{}[\\] \t]"
+        " JSON artifacts
+        let true = 1
+        let false = 0
+        let null = ''
+
+        try
+            let object = eval(a:json)
+        catch
+            " malformed JSON
+            let object = ''
+        endtry
+    else
+        let object = ''
+    endif
+
+    return object
+endfunction " }}}2
+" @vimlint(EVL102, 0, l:true)
+" @vimlint(EVL102, 0, l:false)
+" @vimlint(EVL102, 0, l:null)
 
 " }}}1
 

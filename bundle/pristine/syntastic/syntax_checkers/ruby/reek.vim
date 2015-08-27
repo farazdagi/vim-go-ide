@@ -10,7 +10,7 @@
 "
 "============================================================================
 
-if exists("g:loaded_syntastic_ruby_reek_checker")
+if exists('g:loaded_syntastic_ruby_reek_checker')
     finish
 endif
 let g:loaded_syntastic_ruby_reek_checker = 1
@@ -22,15 +22,11 @@ function! SyntaxCheckers_ruby_reek_IsAvailable() dict
     if !executable(self.getExec())
         return 0
     endif
-
-    let ver = syntastic#util#getVersion(self.getExecEscaped() . ' --version')
-    call self.log(self.getExec() . ' version =', ver)
-
-    return syntastic#util#versionIsAtLeast(ver, [1, 3, 0])
+    return syntastic#util#versionIsAtLeast(self.getVersion(), [1, 3, 0])
 endfunction
 
 function! SyntaxCheckers_ruby_reek_GetLocList() dict
-    let makeprg = self.makeprgBuild({ 'args_before': '--no-color --quiet --line-number --single-line' })
+    let makeprg = self.makeprgBuild({ 'args_before': '--no-color --line-number --single-line' })
 
     let errorformat =
         \ '%E%.%#: Racc::ParseError: %f:%l :: %m,' .
@@ -38,7 +34,8 @@ function! SyntaxCheckers_ruby_reek_GetLocList() dict
 
     let loclist = SyntasticMake({
         \ 'makeprg': makeprg,
-        \ 'errorformat': errorformat })
+        \ 'errorformat': errorformat,
+        \ 'returns': [0, 2] })
 
     for e in loclist
         if e['type'] ==? 'W'

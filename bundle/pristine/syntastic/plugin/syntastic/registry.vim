@@ -1,4 +1,4 @@
-if exists("g:loaded_syntastic_registry") || !exists("g:loaded_syntastic_plugin")
+if exists('g:loaded_syntastic_registry') || !exists('g:loaded_syntastic_plugin')
     finish
 endif
 let g:loaded_syntastic_registry = 1
@@ -6,92 +6,99 @@ let g:loaded_syntastic_registry = 1
 " Initialisation {{{1
 
 let s:_DEFAULT_CHECKERS = {
-        \ 'actionscript':['mxmlc'],
-        \ 'ada':         ['gcc'],
-        \ 'applescript': ['osacompile'],
-        \ 'asciidoc':    ['asciidoc'],
-        \ 'asm':         ['gcc'],
-        \ 'bro':         ['bro'],
-        \ 'bemhtml':     ['bemhtmllint'],
-        \ 'c':           ['gcc'],
-        \ 'cabal':       ['cabal'],
-        \ 'chef':        ['foodcritic'],
-        \ 'co':          ['coco'],
-        \ 'cobol':       ['cobc'],
-        \ 'coffee':      ['coffee', 'coffeelint'],
-        \ 'coq':         ['coqtop'],
-        \ 'cpp':         ['gcc'],
-        \ 'cs':          ['mcs'],
-        \ 'css':         ['csslint'],
-        \ 'cucumber':    ['cucumber'],
-        \ 'cuda':        ['nvcc'],
-        \ 'd':           ['dmd'],
-        \ 'dart':        ['dartanalyzer'],
-        \ 'docbk':       ['xmllint'],
-        \ 'dustjs':      ['swiffer'],
-        \ 'elixir':      [],
-        \ 'erlang':      ['escript'],
-        \ 'eruby':       ['ruby'],
-        \ 'fortran':     ['gfortran'],
-        \ 'glsl':        ['cgc'],
-        \ 'go':          ['go'],
-        \ 'haml':        ['haml'],
-        \ 'handlebars':  ['handlebars'],
-        \ 'haskell':     ['ghc_mod', 'hdevtools', 'hlint'],
-        \ 'haxe':        ['haxe'],
-        \ 'hss':         ['hss'],
-        \ 'html':        ['tidy'],
-        \ 'java':        ['javac'],
-        \ 'javascript':  ['jshint', 'jslint'],
-        \ 'json':        ['jsonlint', 'jsonval'],
-        \ 'less':        ['lessc'],
-        \ 'lex':         ['flex'],
-        \ 'limbo':       ['limbo'],
-        \ 'lisp':        ['clisp'],
-        \ 'llvm':        ['llvm'],
-        \ 'lua':         ['luac'],
-        \ 'markdown':    ['mdl'],
-        \ 'matlab':      ['mlint'],
-        \ 'nasm':        ['nasm'],
-        \ 'nroff':       ['mandoc'],
-        \ 'objc':        ['gcc'],
-        \ 'objcpp':      ['gcc'],
-        \ 'ocaml':       ['camlp4o'],
-        \ 'perl':        ['perlcritic'],
-        \ 'php':         ['php', 'phpcs', 'phpmd'],
-        \ 'po':          ['msgfmt'],
-        \ 'pod':         ['podchecker'],
-        \ 'puppet':      ['puppet', 'puppetlint'],
-        \ 'python':      ['python', 'flake8', 'pylint'],
-        \ 'r':           [],
-        \ 'racket':      ['racket'],
-        \ 'rnc':         ['rnv'],
-        \ 'rst':         ['rst2pseudoxml'],
-        \ 'ruby':        ['mri'],
-        \ 'sass':        ['sass'],
-        \ 'scala':       ['fsc', 'scalac'],
-        \ 'scss':        ['sass', 'scss_lint'],
-        \ 'sh':          ['sh', 'shellcheck'],
-        \ 'slim':        ['slimrb'],
-        \ 'spec':        ['rpmlint'],
-        \ 'tcl':         ['nagelfar'],
-        \ 'tex':         ['lacheck', 'chktex'],
-        \ 'texinfo':     ['makeinfo'],
-        \ 'text':        [],
-        \ 'twig':        ['twiglint'],
-        \ 'typescript':  ['tsc'],
-        \ 'vala':        ['valac'],
-        \ 'verilog':     ['verilator'],
-        \ 'vhdl':        ['ghdl'],
-        \ 'vim':         ['vimlint'],
-        \ 'xhtml':       ['tidy'],
-        \ 'xml':         ['xmllint'],
-        \ 'xslt':        ['xmllint'],
-        \ 'yacc':        ['bison'],
-        \ 'yaml':        ['jsyaml'],
-        \ 'z80':         ['z80syntaxchecker'],
-        \ 'zpt':         ['zptlint'],
-        \ 'zsh':         ['zsh', 'shellcheck'],
+        \ 'actionscript':  ['mxmlc'],
+        \ 'ada':           ['gcc'],
+        \ 'apiblueprint':  ['snowcrash'],
+        \ 'applescript':   ['osacompile'],
+        \ 'asciidoc':      ['asciidoc'],
+        \ 'asm':           ['gcc'],
+        \ 'bro':           ['bro'],
+        \ 'bemhtml':       ['bemhtmllint'],
+        \ 'c':             ['gcc'],
+        \ 'cabal':         ['cabal'],
+        \ 'chef':          ['foodcritic'],
+        \ 'co':            ['coco'],
+        \ 'cobol':         ['cobc'],
+        \ 'coffee':        ['coffee', 'coffeelint'],
+        \ 'coq':           ['coqtop'],
+        \ 'cpp':           ['gcc'],
+        \ 'cs':            ['mcs'],
+        \ 'css':           ['csslint'],
+        \ 'cucumber':      ['cucumber'],
+        \ 'cuda':          ['nvcc'],
+        \ 'd':             ['dmd'],
+        \ 'dart':          ['dartanalyzer'],
+        \ 'docbk':         ['xmllint'],
+        \ 'dustjs':        ['swiffer'],
+        \ 'elixir':        [],
+        \ 'erlang':        ['escript'],
+        \ 'eruby':         ['ruby'],
+        \ 'fortran':       ['gfortran'],
+        \ 'glsl':          ['cgc'],
+        \ 'go':            ['go'],
+        \ 'haml':          ['haml'],
+        \ 'handlebars':    ['handlebars'],
+        \ 'haskell':       ['ghc_mod', 'hdevtools', 'hlint'],
+        \ 'haxe':          ['haxe'],
+        \ 'hss':           ['hss'],
+        \ 'html':          ['tidy'],
+        \ 'java':          ['javac'],
+        \ 'javascript':    ['jshint', 'jslint'],
+        \ 'json':          ['jsonlint', 'jsonval'],
+        \ 'less':          ['lessc'],
+        \ 'lex':           ['flex'],
+        \ 'limbo':         ['limbo'],
+        \ 'lisp':          ['clisp'],
+        \ 'llvm':          ['llvm'],
+        \ 'lua':           ['luac'],
+        \ 'markdown':      ['mdl'],
+        \ 'matlab':        ['mlint'],
+        \ 'mercury':       ['mmc'],
+        \ 'nasm':          ['nasm'],
+        \ 'nix':           ['nix'],
+        \ 'nroff':         ['mandoc'],
+        \ 'objc':          ['gcc'],
+        \ 'objcpp':        ['gcc'],
+        \ 'ocaml':         ['camlp4o'],
+        \ 'perl':          ['perlcritic'],
+        \ 'php':           ['php', 'phpcs', 'phpmd'],
+        \ 'po':            ['msgfmt'],
+        \ 'pod':           ['podchecker'],
+        \ 'puppet':        ['puppet', 'puppetlint'],
+        \ 'python':        ['python', 'flake8', 'pylint'],
+        \ 'qml':           ['qmllint'],
+        \ 'r':             [],
+        \ 'racket':        ['racket'],
+        \ 'rnc':           ['rnv'],
+        \ 'rst':           ['rst2pseudoxml'],
+        \ 'ruby':          ['mri'],
+        \ 'sass':          ['sass'],
+        \ 'scala':         ['fsc', 'scalac'],
+        \ 'scss':          ['sass', 'scss_lint'],
+        \ 'sh':            ['sh', 'shellcheck'],
+        \ 'slim':          ['slimrb'],
+        \ 'sml':           ['smlnj'],
+        \ 'spec':          ['rpmlint'],
+        \ 'sql':           ['sqlint'],
+        \ 'stylus':        ['stylint'],
+        \ 'tcl':           ['nagelfar'],
+        \ 'tex':           ['lacheck', 'chktex'],
+        \ 'texinfo':       ['makeinfo'],
+        \ 'text':          [],
+        \ 'twig':          ['twiglint'],
+        \ 'typescript':    ['tsc'],
+        \ 'vala':          ['valac'],
+        \ 'verilog':       ['verilator'],
+        \ 'vhdl':          ['ghdl'],
+        \ 'vim':           ['vimlint'],
+        \ 'xhtml':         ['tidy'],
+        \ 'xml':           ['xmllint'],
+        \ 'xslt':          ['xmllint'],
+        \ 'yacc':          ['bison'],
+        \ 'yaml':          ['jsyaml'],
+        \ 'z80':           ['z80syntaxchecker'],
+        \ 'zpt':           ['zptlint'],
+        \ 'zsh':           ['zsh'],
     \ }
 lockvar! s:_DEFAULT_CHECKERS
 
@@ -102,6 +109,7 @@ let s:_DEFAULT_FILETYPE_MAP = {
         \ 'litcoffee': 'coffee',
         \ 'mail': 'text',
         \ 'mkd': 'markdown',
+        \ 'pe-puppet': 'puppet',
         \ 'sgml': 'docbk',
         \ 'sgmllnx': 'docbk',
     \ }
@@ -136,7 +144,7 @@ let g:SyntasticRegistry = {}
 " parameters, all private methods take normalized filetypes.  Public methods
 " are thus supposed to normalize filetypes before calling private methods.
 
-function! g:SyntasticRegistry.Instance() " {{{2
+function! g:SyntasticRegistry.Instance() abort " {{{2
     if !exists('s:SyntasticRegistryInstance')
         let s:SyntasticRegistryInstance = copy(self)
         let s:SyntasticRegistryInstance._checkerMap = {}
@@ -145,7 +153,7 @@ function! g:SyntasticRegistry.Instance() " {{{2
     return s:SyntasticRegistryInstance
 endfunction " }}}2
 
-function! g:SyntasticRegistry.CreateAndRegisterChecker(args) " {{{2
+function! g:SyntasticRegistry.CreateAndRegisterChecker(args) abort " {{{2
     let checker = g:SyntasticChecker.New(a:args)
     let registry = g:SyntasticRegistry.Instance()
     call registry._registerChecker(checker)
@@ -155,7 +163,7 @@ endfunction " }}}2
 " If hints_list is empty, user settings are are used instead. Checkers are
 " not checked for availability (that is, the corresponding IsAvailable() are
 " not run).
-function! g:SyntasticRegistry.getCheckers(ftalias, hints_list) " {{{2
+function! g:SyntasticRegistry.getCheckers(ftalias, hints_list) abort " {{{2
     let ft = s:_normalise_filetype(a:ftalias)
     call self._loadCheckersFor(ft)
 
@@ -176,13 +184,19 @@ function! g:SyntasticRegistry.getCheckers(ftalias, hints_list) " {{{2
         \ self._filterCheckersByName(checkers_map, names) : [checkers_map[keys(checkers_map)[0]]]
 endfunction " }}}2
 
-" Same as getCheckers(), but keep only the checkers available.  This runs the
+" Same as getCheckers(), but keep only the available checkers.  This runs the
 " corresponding IsAvailable() functions for all checkers.
-function! g:SyntasticRegistry.getCheckersAvailable(ftalias, hints_list) " {{{2
+function! g:SyntasticRegistry.getCheckersAvailable(ftalias, hints_list) abort " {{{2
     return filter(self.getCheckers(a:ftalias, a:hints_list), 'v:val.isAvailable()')
 endfunction " }}}2
 
-function! g:SyntasticRegistry.getKnownFiletypes() " {{{2
+" Same as getCheckers(), but keep only the checkers tyhat are available and
+" disabled.  This runs the corresponding IsAvailable() functions for all checkers.
+function! g:SyntasticRegistry.getCheckersDisabled(ftalias, hints_list) abort " {{{2
+    return filter(self.getCheckers(a:ftalias, a:hints_list), 'v:val.isDisabled() && v:val.isAvailable()')
+endfunction " }}}2
+
+function! g:SyntasticRegistry.getKnownFiletypes() abort " {{{2
     let types = keys(s:_DEFAULT_CHECKERS)
 
     call extend(types, keys(s:_DEFAULT_FILETYPE_MAP))
@@ -198,26 +212,29 @@ function! g:SyntasticRegistry.getKnownFiletypes() " {{{2
     return syntastic#util#unique(types)
 endfunction " }}}2
 
-function! g:SyntasticRegistry.getNamesOfAvailableCheckers(ftalias) " {{{2
+function! g:SyntasticRegistry.getNamesOfAvailableCheckers(ftalias) abort " {{{2
     let ft = s:_normalise_filetype(a:ftalias)
     call self._loadCheckersFor(ft)
     return keys(filter( copy(self._checkerMap[ft]), 'v:val.isAvailable()' ))
 endfunction " }}}2
 
-function! g:SyntasticRegistry.echoInfoFor(ftalias_list) " {{{2
+function! g:SyntasticRegistry.echoInfoFor(ftalias_list) abort " {{{2
     let ft_list = syntastic#util#unique(map( copy(a:ftalias_list), 's:_normalise_filetype(v:val)' ))
     if len(ft_list) != 1
         let available = []
         let active = []
+        let disabled = []
 
         for ft in ft_list
             call extend(available, map( self.getNamesOfAvailableCheckers(ft), 'ft . "/" . v:val' ))
             call extend(active, map( self.getCheckersAvailable(ft, []), 'ft . "/" . v:val.getName()' ))
+            call extend(disabled, map( self.getCheckersDisabled(ft, []), 'ft . "/" . v:val.getName()' ))
         endfor
     else
         let ft = ft_list[0]
         let available = self.getNamesOfAvailableCheckers(ft)
         let active = map(self.getCheckersAvailable(ft, []), 'v:val.getName()')
+        let disabled = map(self.getCheckersDisabled(ft, []), 'v:val.getName()')
     endif
 
     let cnt = len(available)
@@ -229,6 +246,13 @@ function! g:SyntasticRegistry.echoInfoFor(ftalias_list) " {{{2
     let plural = cnt != 1 ? 's' : ''
     let cklist = cnt ? join(active) : '-'
     echomsg 'Currently enabled checker' . plural . ': ' . cklist
+
+    let cnt = len(disabled)
+    let plural = cnt != 1 ? 's' : ''
+    if len(disabled)
+        let cklist = join(sort(disabled))
+        echomsg 'Checker' . plural . ' disabled for security reasons: ' . cklist
+    endif
 
     " Eclim feels entitled to mess with syntastic's variables {{{3
     if exists(':EclimValidate') && get(g:, 'EclimFileTypeValidate', 1)
@@ -273,16 +297,16 @@ function! g:SyntasticRegistry._registerChecker(checker) abort " {{{2
     let self._checkerMap[ft][name] = a:checker
 endfunction " }}}2
 
-function! g:SyntasticRegistry._filterCheckersByName(checkers_map, list) " {{{2
+function! g:SyntasticRegistry._filterCheckersByName(checkers_map, list) abort " {{{2
     return filter( map(copy(a:list), 'get(a:checkers_map, v:val, {})'), '!empty(v:val)' )
 endfunction " }}}2
 
-function! g:SyntasticRegistry._loadCheckersFor(filetype) " {{{2
+function! g:SyntasticRegistry._loadCheckersFor(filetype) abort " {{{2
     if has_key(self._checkerMap, a:filetype)
         return
     endif
 
-    execute "runtime! syntax_checkers/" . a:filetype . "/*.vim"
+    execute 'runtime! syntax_checkers/' . a:filetype . '/*.vim'
 
     if !has_key(self._checkerMap, a:filetype)
         let self._checkerMap[a:filetype] = {}
@@ -290,7 +314,7 @@ function! g:SyntasticRegistry._loadCheckersFor(filetype) " {{{2
 endfunction " }}}2
 
 " Check for obsolete variable g:syntastic_<filetype>_checker
-function! g:SyntasticRegistry._checkDeprecation(filetype) " {{{2
+function! g:SyntasticRegistry._checkDeprecation(filetype) abort " {{{2
     if exists('g:syntastic_' . a:filetype . '_checker') && !exists('g:syntastic_' . a:filetype . '_checkers')
         let g:syntastic_{a:filetype}_checkers = [g:syntastic_{a:filetype}_checker]
         call syntastic#log#oneTimeWarn('variable g:syntastic_' . a:filetype . '_checker is deprecated')
@@ -303,14 +327,14 @@ endfunction " }}}2
 
 "resolve filetype aliases, and replace - with _ otherwise we cant name
 "syntax checker functions legally for filetypes like "gentoo-metadata"
-function! s:_normalise_filetype(ftalias) " {{{2
+function! s:_normalise_filetype(ftalias) abort " {{{2
     let ft = get(s:_DEFAULT_FILETYPE_MAP, a:ftalias, a:ftalias)
     let ft = get(g:syntastic_filetype_map, ft, ft)
     let ft = substitute(ft, '\m-', '_', 'g')
     return ft
 endfunction " }}}2
 
-function! s:_disabled_by_eclim(filetype) " {{{2
+function! s:_disabled_by_eclim(filetype) abort " {{{2
     if index(s:_ECLIM_TYPES, a:filetype) >= 0
         let lang = toupper(a:filetype[0]) . a:filetype[1:]
         let ft = a:filetype !=# 'cpp' ? lang : 'C'
@@ -320,7 +344,7 @@ function! s:_disabled_by_eclim(filetype) " {{{2
     return 0
 endfunction " }}}2
 
-function! s:_disabled_by_ycm(filetype) " {{{2
+function! s:_disabled_by_ycm(filetype) abort " {{{2
     return index(s:_YCM_TYPES, a:filetype) >= 0
 endfunction " }}}2
 
