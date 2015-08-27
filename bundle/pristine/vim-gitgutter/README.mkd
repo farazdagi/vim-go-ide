@@ -13,6 +13,7 @@ Features:
 * Can be toggled on/off.
 * Preserves signs from other plugins.
 * Easy to integrate diff stats into status line; built-in integration with [vim-airline](https://github.com/bling/vim-airline/).
+* Works with fish shell (in addition to the usual shells).
 
 Constraints:
 
@@ -109,6 +110,8 @@ You can stage or revert an individual hunk when your cursor is in it:
 * stage the hunk with `<Leader>hs` or
 * revert it with `<Leader>hr`.
 
+The `.` command will work with both these if you install [repeat.vim](https://github.com/tpope/vim-repeat).
+
 To set your own mappings for these, for example if you prefer the mnemonics hunk-add and hunk-undo:
 
 ```viml
@@ -181,17 +184,20 @@ Please note that vim-gitgutter won't override any colours or highlights you've s
 
 #### Sign column
 
-The background colour of the sign column is controlled by the `SignColumn` highlight group.  This will be either set in your colorscheme or Vim's default.
+By default vim-gitgutter will make the sign column look like the line number column.
 
-To find out where it's set, and to what it's set, use `:verbose highlight SignColumn`.
+To customise your sign column's background color, first tell vim-gitgutter to leave it alone:
 
-If your `SignColumn` is not set (`:highlight SignColumn` gives you `SignColumn xxx cleared`), vim-gitgutter will set it to the same as your line number column (i.e. the `LineNr` highlight group).
+```viml
+let g:gitgutter_override_sign_column_highlight = 0
+```
 
-To change your sign column's appearance, update your colorscheme or `~/.vimrc` like this:
+And then either update your colorscheme's `SignColumn` highlight group or set it in your vimrc:
 
-* For the same appearance as your line number column: `highlight clear SignColumn`
-* For a specific appearance on terminal Vim: `highlight SignColumn ctermbg=whatever`
-* For a specific appearance on gVim/MacVim: `highlight SignColumn guibg=whatever`
+```viml
+highlight SignColumn ctermbg=whatever    " terminal Vim
+highlight SignColumn guibg=whatever      " gVim/MacVim
+```
 
 By default the sign column will appear when there are signs to show and disappear when there aren't.  If you would always like the sign column to be there, add `let g:gitgutter_sign_column_always = 1` to your `~/.vimrc`.
 
@@ -299,7 +305,7 @@ Here are some things you can check:
 * Your git config is compatible with the version of git which your Vim is calling (`:echo system('git --version')`).
 * Your Vim supports signs (`:echo has('signs')` should give `1`).
 * Your file is being tracked by git and has unstaged, saved changes.
-* If you use the Fish shell, or another non-POSIX shell, add `set shell=/bin/bash` to your `~/.vimrc`.
+* If you use a non-POSIX shell, add `set shell=/bin/bash` to your `~/.vimrc`.
 
 
 ### Shameless Plug

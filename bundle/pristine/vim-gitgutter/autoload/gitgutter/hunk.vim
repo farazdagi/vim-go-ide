@@ -39,10 +39,11 @@ function! gitgutter#hunk#next_hunk(count)
         let hunk_count += 1
         if hunk_count == a:count
           execute 'normal!' hunk[2] . 'G'
-          break
+          return
         endif
       endif
     endfor
+    call gitgutter#utility#warn('No more hunks')
   endif
 endfunction
 
@@ -56,15 +57,16 @@ function! gitgutter#hunk#prev_hunk(count)
         if hunk_count == a:count
           let target = hunk[2] == 0 ? 1 : hunk[2]
           execute 'normal!' target . 'G'
-          break
+          return
         endif
       endif
     endfor
+    call gitgutter#utility#warn('No previous hunks')
   endif
 endfunction
 
-" Returns the hunk the cursor is currently in or 0 if the cursor isn't in a
-" hunk.
+" Returns the hunk the cursor is currently in or an empty list if the cursor
+" isn't in a hunk.
 function! gitgutter#hunk#current_hunk()
   let current_hunk = []
 
@@ -75,9 +77,7 @@ function! gitgutter#hunk#current_hunk()
     endif
   endfor
 
-  if len(current_hunk) == 4
-    return current_hunk
-  endif
+  return current_hunk
 endfunction
 
 function! gitgutter#hunk#cursor_in_hunk(hunk)
@@ -94,3 +94,16 @@ function! gitgutter#hunk#cursor_in_hunk(hunk)
   return 0
 endfunction
 
+" Returns the number of lines the current hunk is offset from where it would
+" be if any changes above it in the file didn't exist.
+function! gitgutter#hunk#line_adjustment_for_current_hunk()
+  let adj = 0
+  for hunk in s:hunks
+    if gitgutter#hunk#cursor_in_hunk(hunk)
+      break
+    else
+      let adj += hunk[1] - hunk[3]
+    endif
+  endfor
+  return adj
+endfunction

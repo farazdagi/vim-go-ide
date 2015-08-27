@@ -32,12 +32,18 @@ call s:set('g:gitgutter_max_signs',                 500)
 call s:set('g:gitgutter_signs',                       1)
 call s:set('g:gitgutter_highlight_lines',             0)
 call s:set('g:gitgutter_sign_column_always',          0)
+call s:set('g:gitgutter_override_sign_column_highlight', 1)
 call s:set('g:gitgutter_realtime',                    1)
 call s:set('g:gitgutter_eager',                       1)
 call s:set('g:gitgutter_sign_added',                '+')
 call s:set('g:gitgutter_sign_modified',             '~')
 call s:set('g:gitgutter_sign_removed',              '_')
-call s:set('g:gitgutter_sign_removed_first_line',   '‾')
+try
+  call s:set('g:gitgutter_sign_removed_first_line', '‾')
+catch /E239/
+  let g:gitgutter_sign_removed_first_line = '_^'
+endtry
+
 call s:set('g:gitgutter_sign_modified_removed',    '~_')
 call s:set('g:gitgutter_diff_args',                  '')
 call s:set('g:gitgutter_escape_grep',                 0)

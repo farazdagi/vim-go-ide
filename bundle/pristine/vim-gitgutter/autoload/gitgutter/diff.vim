@@ -1,27 +1,57 @@
 let s:grep_available = executable('grep')
-let s:grep_command = ' | '.(g:gitgutter_escape_grep ? '\grep' : 'grep').' -e '.gitgutter#utility#shellescape('^@@ ')
+if s:grep_available
+  let s:grep_command = ' | '.(g:gitgutter_escape_grep ? '\grep' : 'grep')
+  let s:grep_help = gitgutter#utility#system('grep --help')
+  if s:grep_help =~# '--color'
+    let s:grep_command .= ' --color=never'
+  endif
+  let s:grep_command .= ' -e '.gitgutter#utility#shellescape('^@@ ')
+endif
 let s:hunk_re = '^@@ -\(\d\+\),\?\(\d*\) +\(\d\+\),\?\(\d*\) @@'
 
+let s:fish = &shell =~# 'fish'
 
-function! gitgutter#diff#run_diff(realtime, use_external_grep, lines_of_context)
+function! gitgutter#diff#run_diff(realtime, use_external_grep)
   " Wrap compound commands in parentheses to make Windows happy.
-  let cmd = '('
+  " bash doesn't mind the parentheses; fish doesn't want them.
+  let cmd = s:fish ? '' : '('
 
   let bufnr = gitgutter#utility#bufnr()
   let tracked = getbufvar(bufnr, 'gitgutter_tracked')  " i.e. tracked by git
   if !tracked
-    let cmd .= 'git ls-files --error-unmatch '.gitgutter#utility#shellescape(gitgutter#utility#filename()).' && ('
+    let cmd .= 'git ls-files --error-unmatch '.gitgutter#utility#shellescape(gitgutter#utility#filename())
+    let cmd .= s:fish ? '; and ' : ' && ('
   endif
 
   if a:realtime
     let blob_name = ':'.gitgutter#utility#shellescape(gitgutter#utility#file_relative_to_repo_root())
     let blob_file = tempname()
-    let cmd .= 'git show '.blob_name.' > '.blob_file.' && '
+    let buff_file = tempname()
+    let extension = gitgutter#utility#extension()
+    if !empty(extension)
+      let blob_file .= '.'.extension
+      let buff_file .= '.'.extension
+    endif
+    let cmd .= 'git show '.blob_name.' > '.blob_file
+    let cmd .= s:fish ? '; and ' : ' && '
+
+    " Writing the whole buffer resets the '[ and '] marks and also the
+    " 'modified' flag (if &cpoptions includes '+').  These are unwanted
+    " side-effects so we save and restore the values ourselves.
+    let modified      = getbufvar(bufnr, "&mod")
+    let op_mark_start = getpos("'[")
+    let op_mark_end   = getpos("']")
+
+    execute 'keepalt silent write' buff_file
+
+    call setbufvar(bufnr, "&mod", modified)
+    call setpos("'[", op_mark_start)
+    call setpos("']", op_mark_end)
   endif
 
-  let cmd .= 'git diff --no-ext-diff --no-color -U'.a:lines_of_context.' '.g:gitgutter_diff_args.' -- '
+  let cmd .= 'git diff --no-ext-diff --no-color -U0 '.g:gitgutter_diff_args.' -- '
   if a:realtime
-    let cmd .= blob_file.' - '
+    let cmd .= blob_file.' '.buff_file
   else
     let cmd .= gitgutter#utility#shellescape(gitgutter#utility#filename())
   endif
@@ -35,19 +65,24 @@ function! gitgutter#diff#run_diff(realtime, use_external_grep, lines_of_context)
     " differences are found.  However we want to treat non-matches and
     " differences as non-erroneous behaviour; so we OR the command with one
     " which always exits with success (0).
-    let cmd.= ' || exit 0'
+    let cmd .= s:fish ? '; or ' : ' || '
+    let cmd .= 'exit 0'
   endif
 
-  let cmd .= ')'
-
-  if !tracked
+  if !s:fish
     let cmd .= ')'
-  endif
+
+    if !tracked
+      let cmd .= ')'
+    endif
+  end
+
+  let diff = gitgutter#utility#system(gitgutter#utility#command_in_directory_of_file(cmd))
 
   if a:realtime
-    let diff = gitgutter#utility#system(gitgutter#utility#command_in_directory_of_file(cmd), gitgutter#utility#buffer_contents())
-  else
-    let diff = gitgutter#utility#system(gitgutter#utility#command_in_directory_of_file(cmd))
+    call delete(blob_file)
+    call delete(buff_file)
+    execute 'keepalt silent bwipeout' buff_file
   endif
 
   if gitgutter#utility#shell_error()
@@ -199,17 +234,26 @@ function! gitgutter#diff#process_modified_and_removed(modifications, from_count,
   let a:modifications[-1] = [a:to_line + offset - 1, 'modified_removed']
 endfunction
 
-function! gitgutter#diff#generate_diff_for_hunk(keep_header, lines_of_context)
-  let diff = gitgutter#diff#run_diff(0, 0, a:lines_of_context)
-  let diff_for_hunk = gitgutter#diff#discard_hunks(diff, a:keep_header)
-  if !a:keep_header
-    " Discard summary line
-    let diff_for_hunk = join(split(diff_for_hunk, '\n')[1:-1], "\n")
+" Generates a zero-context diff for the current hunk.
+"
+" type - stage | revert | preview
+function! gitgutter#diff#generate_diff_for_hunk(type)
+  " Although (we assume) diff is up to date, we don't store it anywhere so we
+  " have to regenerate it now...
+  let diff = gitgutter#diff#run_diff(0, 0)
+  let diff_for_hunk = gitgutter#diff#discard_hunks(diff, a:type == 'stage' || a:type == 'revert')
+
+  if a:type == 'stage' || a:type == 'revert'
+    let diff_for_hunk = gitgutter#diff#adjust_hunk_summary(diff_for_hunk, a:type == 'stage')
   endif
+
   return diff_for_hunk
 endfunction
 
-" diff - with non-zero lines of context
+" Returns the diff with all hunks discarded except the current.
+"
+" diff        - the diff to process
+" keep_header - truthy to keep the diff header and hunk summary, falsy to discard it
 function! gitgutter#diff#discard_hunks(diff, keep_header)
   let modified_diff = []
   let keep_line = a:keep_header
@@ -222,5 +266,36 @@ function! gitgutter#diff#discard_hunks(diff, keep_header)
       call add(modified_diff, line)
     endif
   endfor
-  return join(modified_diff, "\n") . "\n"
+
+  if a:keep_header
+    return join(modified_diff, "\n") . "\n"
+  else
+    " Discard hunk summary too.
+    return join(modified_diff[1:], "\n") . "\n"
+  endif
 endfunction
+
+" Adjust hunk summary (from's / to's line number) to ignore changes above/before this one.
+"
+" diff_for_hunk - a diff containing only the hunk of interest
+" staging       - truthy if the hunk is to be staged, falsy if it is to be reverted
+"
+" TODO: push this down to #discard_hunks?
+function! gitgutter#diff#adjust_hunk_summary(diff_for_hunk, staging)
+  let line_adjustment = gitgutter#hunk#line_adjustment_for_current_hunk()
+  let adj_diff = []
+  for line in split(a:diff_for_hunk, '\n')
+    if match(line, s:hunk_re) != -1
+      if a:staging
+        " increment 'to' line number
+        let line = substitute(line, '+\@<=\(\d\+\)', '\=submatch(1)+line_adjustment', '')
+      else
+        " decrement 'from' line number
+        let line = substitute(line, '-\@<=\(\d\+\)', '\=submatch(1)-line_adjustment', '')
+      endif
+    endif
+    call add(adj_diff, line)
+  endfor
+  return join(adj_diff, "\n") . "\n"
+endfunction
+

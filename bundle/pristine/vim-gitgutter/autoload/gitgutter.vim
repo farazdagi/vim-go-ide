@@ -19,7 +19,7 @@ function! gitgutter#process_buffer(bufnr, realtime)
     endif
     try
       if !a:realtime || gitgutter#utility#has_fresh_changes()
-        let diff = gitgutter#diff#run_diff(a:realtime || gitgutter#utility#has_unsaved_changes(), 1, 0)
+        let diff = gitgutter#diff#run_diff(a:realtime || gitgutter#utility#has_unsaved_changes(), 1)
         call gitgutter#hunk#set_hunks(gitgutter#diff#parse_diff(diff))
         let modified_lines = gitgutter#diff#process_hunks(gitgutter#hunk#hunks())
 
@@ -156,14 +156,17 @@ function! gitgutter#stage_hunk()
     " It doesn't make sense to stage a hunk otherwise.
     silent write
 
-    " construct a diff
-    let diff_for_hunk = gitgutter#diff#generate_diff_for_hunk(1, 1)
+    if empty(gitgutter#hunk#current_hunk())
+      call gitgutter#utility#warn('cursor is not in a hunk')
+    else
+      let diff_for_hunk = gitgutter#diff#generate_diff_for_hunk('stage')
+      call gitgutter#utility#system(gitgutter#utility#command_in_directory_of_file('git apply --cached --unidiff-zero - '), diff_for_hunk)
 
-    " apply the diff
-    call gitgutter#utility#system(gitgutter#utility#command_in_directory_of_file('git apply --cached --recount --allow-overlap - '), diff_for_hunk)
+      " refresh gitgutter's view of buffer
+      silent execute "GitGutter"
+    endif
 
-    " refresh gitgutter's view of buffer
-    silent execute "GitGutter"
+    silent! call repeat#set("\<Plug>GitGutterStageHunk", -1)<CR>
   endif
 endfunction
 
@@ -173,14 +176,17 @@ function! gitgutter#revert_hunk()
     " It doesn't make sense to stage a hunk otherwise.
     silent write
 
-    " construct a diff
-    let diff_for_hunk = gitgutter#diff#generate_diff_for_hunk(1, 1)
+    if empty(gitgutter#hunk#current_hunk())
+      call gitgutter#utility#warn('cursor is not in a hunk')
+    else
+      let diff_for_hunk = gitgutter#diff#generate_diff_for_hunk('revert')
+      call gitgutter#utility#system(gitgutter#utility#command_in_directory_of_file('git apply --reverse --unidiff-zero - '), diff_for_hunk)
 
-    " apply the diff
-    call gitgutter#utility#system(gitgutter#utility#command_in_directory_of_file('git apply --reverse - '), diff_for_hunk)
+      " reload file
+      silent edit
+    endif
 
-    " reload file
-    silent edit
+    silent! call repeat#set("\<Plug>GitGutterRevertHunk", -1)<CR>
   endif
 endfunction
 
@@ -188,21 +194,23 @@ function! gitgutter#preview_hunk()
   if gitgutter#utility#is_active()
     silent write
 
-    " construct a diff
-    let diff_for_hunk = gitgutter#diff#generate_diff_for_hunk(0, 0)
+    if empty(gitgutter#hunk#current_hunk())
+      call gitgutter#utility#warn('cursor is not in a hunk')
+    else
+      let diff_for_hunk = gitgutter#diff#generate_diff_for_hunk('preview')
 
-    " preview the diff
-    silent! wincmd P
-    if !&previewwindow
-      execute 'bo ' . &previewheight . ' new'
-      set previewwindow
+      silent! wincmd P
+      if !&previewwindow
+        execute 'bo ' . &previewheight . ' new'
+        set previewwindow
+      endif
+
+      setlocal noro modifiable filetype=diff buftype=nofile bufhidden=delete noswapfile
+      execute "%delete_"
+      call append(0, split(diff_for_hunk, "\n"))
+
+      wincmd p
     endif
-
-    setlocal noro modifiable filetype=diff buftype=nofile bufhidden=delete noswapfile
-    execute "%delete_"
-    call append(0, split(diff_for_hunk, "\n"))
-
-    wincmd p
   endif
 endfunction
 
