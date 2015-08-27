@@ -1,6 +1,10 @@
 # vim-go-ide
 Get started with Go development in minutes!
 
+### 0. What is this?
+
+Quite simply this is a vim configuration which will setup all the necessary Go development environment (and plugins), without overwriting your current Vim settings. Basically, you will be able to use amazing [vim-go plugin](https://github.com/fatih/vim-go) (plus number of others), without affecting your system's Vim configuration.
+
 ### 1. Install runtime:
 
 Fork the repo, and then clone it to `~/.vim_go_runtime`. Once done, just run installation script:
@@ -28,4 +32,9 @@ In order for the [amazing vim-go](https://github.com/fatih/vim-go) to be most us
 
 ![Screenshot](https://raw.githubusercontent.com/farazdagi/vim-go-ide/master/screenshot.png)
 
-Yep, that's it! You can also read a corresponding [blog post](http://farazdagi.com/blog/2015/vim-as-golang-ide/).
+Yep, that's it! 
+
+### 5. Where to go from here?
+
+- You can also read a corresponding [blog post](http://farazdagi.com/blog/2015/vim-as-golang-ide/).
+- You are highly advised to review [vim-go docs](https://github.com/fatih/vim-go) (just typing `:help vim-go` is also good enough).
