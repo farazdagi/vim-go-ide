@@ -38,3 +38,7 @@ Yep, that's it!
 
 - You can also read a corresponding [blog post](http://farazdagi.com/blog/2015/vim-as-golang-ide/).
 - You are highly advised to review [vim-go docs](https://github.com/fatih/vim-go) (just typing `:help vim-go` is also good enough).
+- Review list of plugins installed (see [bin/update_plugins](https://github.com/farazdagi/vim-go-ide/blob/master/bin/update_plugins)), and default configuration that comes with this setup (see [vimrc folder](https://github.com/farazdagi/vim-go-ide/tree/master/vimrc)).
+- You can also define your custom settings in `~/.vim_go_runtime/custom_config.vim` the runtime will try to load this file - so feel free to remap keys as you see necessary!
+
+**If you know some plugin that will enhance this setup and thus should be included - submit a PR**
