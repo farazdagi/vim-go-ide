@@ -88,7 +88,13 @@ function! s:initialize_others() "{{{
           \ call neosnippet#variables#set_snippets({})
     autocmd BufEnter *
           \ call neosnippet#mappings#_clear_select_mode_mappings()
+    autocmd BufWritePre * NeoSnippetClearMarkers
   augroup END"}}}
+
+  if exists('v:completed_item')
+    autocmd neosnippet CompleteDone *
+          \ call neosnippet#handlers#_complete_done()
+  endif
 
   augroup neosnippet
     autocmd BufNewFile,BufRead,Syntax *
@@ -97,7 +103,7 @@ function! s:initialize_others() "{{{
           \ .neosnippet#get_sync_placeholder_marker_pattern().'\|'
           \ .neosnippet#get_mirror_placeholder_marker_pattern()."'"
           \ 'containedin=ALL oneline'
-    if has('conceal')
+    if g:neosnippet#enable_conceal_markers && has('conceal')
       autocmd BufNewFile,BufRead,Syntax *
             \ syntax region neosnippetConcealExpandSnippets
             \ matchgroup=neosnippetExpandSnippets

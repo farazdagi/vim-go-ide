@@ -47,15 +47,15 @@ Notes:
    And [neosnippet-snippets](https://github.com/Shougo/neosnippet-snippets)
 
     ```vim
-    Bundle 'Shougo/neocomplcache'
+    Plugin 'Shougo/neocomplcache'
     or
-    Bundle 'Shougo/neocomplete'
+    Plugin 'Shougo/neocomplete'
 
-    Bundle 'Shougo/neosnippet'
-    Bundle 'Shougo/neosnippet-snippets'
+    Plugin 'Shougo/neosnippet'
+    Plugin 'Shougo/neosnippet-snippets'
     ```
 
-3. Open up Vim and start installation with `:BundleInstall`
+3. Open up Vim and start installation with `:PluginInstall`
 
 ### Neobundle
 
@@ -91,7 +91,7 @@ Notes:
 Configuration
 -------------
 
-This is an example `~/.vimrc` configuration for Neosnippet. It is assumes you
+This is an example `~/.vimrc` configuration for Neosnippet. It is assumed you
 already have Neocomplcache configured. With the settings of the example, you
 can use the following keys:
 
@@ -114,9 +114,9 @@ smap <expr><TAB> neosnippet#expandable_or_jumpable() ?
 \ "\<Plug>(neosnippet_expand_or_jump)"
 \: "\<TAB>"
 
-" For snippet_complete marker.
+" For conceal markers.
 if has('conceal')
-  set conceallevel=2 concealcursor=i
+  set conceallevel=2 concealcursor=niv
 endif
 ```
 

@@ -42,6 +42,12 @@ function! s:get_list() "{{{
   endif
   return s:List
 endfunction"}}}
+function! s:get_string() "{{{
+  if !exists('s:String')
+    let s:String = neosnippet#util#get_vital().import('Data.String')
+  endif
+  return s:String
+endfunction"}}}
 function! s:get_process() "{{{
   if !exists('s:Process')
     let s:Process = neosnippet#util#get_vital().import('Process')
@@ -74,10 +80,10 @@ function! neosnippet#util#iconv(...) "{{{
   return call(s:get_process().iconv, a:000)
 endfunction"}}}
 function! neosnippet#util#truncate(...) "{{{
-  return call(s:get_prelude().truncate, a:000)
+  return call(s:get_string().truncate, a:000)
 endfunction"}}}
 function! neosnippet#util#strwidthpart(...) "{{{
-  return call(s:get_prelude().strwidthpart, a:000)
+  return call(s:get_string().strwidthpart, a:000)
 endfunction"}}}
 
 function! neosnippet#util#expand(path) "{{{
@@ -101,7 +107,7 @@ function! neosnippet#util#get_cur_text() "{{{
         \         '^.*\%' . col('.') . 'c' . (mode() ==# 'i' ? '' : '.'))
 endfunction"}}}
 function! neosnippet#util#print_error(string) "{{{
-  echohl Error | echomsg a:string | echohl None
+  echohl Error | echomsg '[neosnippet] ' . a:string | echohl None
 endfunction"}}}
 
 function! neosnippet#util#parse_options(args, options_list) "{{{

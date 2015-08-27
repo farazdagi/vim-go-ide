@@ -38,7 +38,7 @@ function! neosnippet#parser#_parse(snippet_file) "{{{
   let cache_dir = neosnippet#variables#data_dir()
   if s:Cache.check_old_cache(cache_dir, a:snippet_file)
     let snippets = s:parse(a:snippet_file)
-    if len(snippets) > 5
+    if len(snippets) > 5 && !neosnippet#util#is_sudo()
       call s:Cache.writefile(cache_dir, a:snippet_file, [string(snippets)])
     endif
   else
@@ -141,7 +141,7 @@ function! s:parse_snippet_name(snippet_file, line, linenr, dup_check) "{{{
   if has_key(a:dup_check, snippet_dict.name)
     let dup = a:dup_check[snippet_dict.name]
     call neosnippet#util#print_error(printf(
-          \ 'Warning: %s:%d is overriding `%s` from %s:%d',
+          \ '%s:%d is overriding `%s` from %s:%d',
           \ a:snippet_file, a:linenr, snippet_dict.name,
           \ dup.action__path, dup.action__line))
     call neosnippet#util#print_error(printf(
@@ -178,18 +178,18 @@ function! s:add_snippet_attribute(snippet_file, line, linenr, snippet_dict) "{{{
           \ '^options\s\+\zs.*$'), '[,[:space:]]\+')
       if !has_key(a:snippet_dict.options, option)
         call neosnippet#util#print_error(
-              \ printf('[neosnippet] %s:%d', a:snippet_file, a:linenr))
+              \ printf('%s:%d', a:snippet_file, a:linenr))
         call neosnippet#util#print_error(
-              \ printf('[neosnippet] Invalid option name : "%s"', option))
+              \ printf('Invalid option name : "%s"', option))
       else
         let a:snippet_dict.options[option] = 1
       endif
     endfor
   else
     call neosnippet#util#print_error(
-          \ printf('[neosnippet] %s:%d', a:snippet_file, a:linenr))
+          \ printf('%s:%d', a:snippet_file, a:linenr))
     call neosnippet#util#print_error(
-          \ printf('[neosnippet] Invalid syntax : "%s"', a:line))
+          \ printf('Invalid syntax : "%s"', a:line))
   endif
 endfunction"}}}
 
@@ -254,8 +254,13 @@ function! neosnippet#parser#_initialize_snippet(dict, path, line, pattern, name)
 endfunction"}}}
 
 function! neosnippet#parser#_initialize_snippet_options() "{{{
-  return { 'head' : 0, 'word' :
-        \   g:neosnippet#expand_word_boundary, 'indent' : 0 }
+  return {
+        \ 'head' : 0,
+        \ 'word' :
+        \   g:neosnippet#expand_word_boundary,
+        \ 'indent' : 0,
+        \ 'oneshot' : 0,
+        \ }
 endfunction"}}}
 
 let &cpo = s:save_cpo

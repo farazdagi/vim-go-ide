@@ -137,7 +137,8 @@ function! neosnippet#commands#_clear_markers() "{{{
   let expand_stack = neosnippet#variables#expand_stack()
 
   " Get patterns and count.
-  if empty(expand_stack)
+  if !&l:modifiable
+        \ || empty(expand_stack)
         \ || neosnippet#variables#current_neosnippet().trigger
     return
   endif
@@ -174,6 +175,8 @@ function! neosnippet#commands#_clear_markers() "{{{
     endif
 
     call setpos('.', pos)
+
+    call neosnippet#variables#clear_expand_stack()
   endtry
 endfunction"}}}
 

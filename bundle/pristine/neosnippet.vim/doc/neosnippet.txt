@@ -1,7 +1,7 @@
 *neosnippet.txt*
 		The neo-snippet plugin contains snippet source
 
-Version: 4.1
+Version: 4.2
 Author: Shougo <Shougo.Matsu@gmail.com>
 License: MIT license  {{{
     Permission is hereby granted, free of charge, to any person obtaining
@@ -204,12 +204,6 @@ g:neosnippet#enable_snipmate_compatibility
 
 		The default value is 0.
 
-g:neosnippet#enable_preview			 *g:neosnippet#enable_preview*
-		If this variable is not 0, neosnippet will enable the preview
-		window feature in neocomplcache/neocomplete sources.
-
-		The default value is 0.
-
 					 *g:neosnippet#expand_word_boundary*
 g:neosnippet#expand_word_boundary
 		If it is not 0, neosnippet will expand snippets by a word
@@ -217,6 +211,13 @@ g:neosnippet#expand_word_boundary
 		Note: It must be initialized before snippet loading.
 
 		The default value is 0.
+
+					*g:neosnippet#enable_conceal_markers*
+g:neosnippet#enable_conceal_markers
+		If this variable is not 0, neosnippet will use the |conceal|
+		markers.
+
+		The default value is 1.
 
 						*g:neosnippet#scope_aliases*
 g:neosnippet#scope_aliases
@@ -336,9 +337,9 @@ EXAMPLES					*neosnippet-examples*
 	" \ "\<Plug>(neosnippet_expand_or_jump)"
 	" \: "\<TAB>"
 
-	" For snippet_complete marker.
+	" For conceal markers.
 	if has('conceal')
-	  set conceallevel=2 concealcursor=i
+	  set conceallevel=2 concealcursor=niv
 	endif
 
 	" Enable snipMate compatibility feature.
@@ -770,6 +771,14 @@ neosnippet has many forks, but almost all forked users change default snippet
 files.
 https://github.com/Shougo/neosnippet.vim/network
 If splitted default snippets, users can fork and change it easily.
+
+Q: I want to complete function arguments using neosnippet like clang_complete.
+
+A: Yes, you can.  You can just complete the candidate from completion window
+and expand the candidate as trigger.
+Note: It works in "func(arg1, arg2, ...)" prototypes only.
+Note: It is experiental feature.
+Note: |v:completed_item| feature is needed.
 
 ==============================================================================
 vim:tw=78:ts=8:ft=help:norl:noet:fen:noet:
