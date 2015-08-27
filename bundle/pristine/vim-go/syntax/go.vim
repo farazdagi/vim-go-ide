@@ -52,7 +52,7 @@ if !exists("g:go_highlight_trailing_whitespace_error")
 endif
 
 if !exists("g:go_highlight_operators")
-	let g:go_highlight_operators = 1
+	let g:go_highlight_operators = 0
 endif
 
 if !exists("g:go_highlight_functions")
@@ -65,6 +65,10 @@ endif
 
 if !exists("g:go_highlight_structs")
 	let g:go_highlight_structs = 0
+endif
+
+if !exists("g:go_highlight_build_constraints")
+    let g:go_highlight_build_constraints = 0
 endif
 
 syn case match
@@ -143,7 +147,7 @@ hi def link     goEscapeError       Error
 syn cluster     goStringGroup       contains=goEscapeOctal,goEscapeC,goEscapeX,goEscapeU,goEscapeBigU,goEscapeError
 syn region      goString            start=+"+ skip=+\\\\\|\\"+ end=+"+ contains=@goStringGroup
 syn region      goRawString         start=+`+ end=+`+
-syn match       goFormatSpecifier   /%[#0\-\ \+\*]*[vTtbcdoqxXUeEfgGsp]/ contained containedin=goString
+syn match       goFormatSpecifier   /%[-#0 +]*\%(\*\|\d\+\)\=\%(\.\%(\*\|\d\+\)\)*[vTtbcdoqxXUeEfgGsp]/ contained containedin=goString
 
 hi def link     goString            String
 hi def link     goRawString         String
@@ -232,20 +236,18 @@ hi def link     goTodo              Todo
 
 " Operators; 
 if g:go_highlight_operators != 0
-	syn match goOperator /:=/
-	syn match goOperator />=/
-	syn match goOperator /<=/
-	syn match goOperator /==/
-	syn match goOperator /!=/
-	syn match goOperator /+=/
-	syn match goOperator /-=/
-	syn match goOperator /\s>\s/
-	syn match goOperator /\s<\s/
-	syn match goOperator /\s+\s/
-	syn match goOperator /\s-\s/
-	syn match goOperator /\s\*\s/
-	syn match goOperator /\s\/\s/
-	syn match goOperator /\s%\s/
+	" match single-char operators:          - + % < > ! & | ^ * =
+	" and corresponding two-char operators: -= += %= <= >= != &= |= ^= *= ==
+	syn match goOperator /[-+%<>!&|^*=]=\?/
+	" match / and /=
+	syn match goOperator /\/\%(=\|\ze[^/*]\)/
+	" match two-char operators:               << >> &^
+	" and corresponding three-char operators: <<= >>= &^=
+	syn match goOperator /\%(<<\|>>\|&^\)=\?/
+	" match remaining two-char operators: := && || <- ++ --
+	syn match goOperator /:=\|||\|<-\|++\|--/
+	" match ...
+	syn match goOperator /\.\.\./
 endif
 hi def link     goOperator					Operator
 
@@ -269,6 +271,21 @@ if g:go_highlight_structs != 0
 endif
 hi def link     goStruct						Function
 hi def link     goStructDef         Function
+
+" Build Constraints
+if g:go_highlight_build_constraints != 0
+    syn keyword goBuildOs           contained ignore cgo android darwin dragonfly freebsd linux nacl netbsd openbsd plan9 solaris windows 
+    syn keyword goBuildArch         contained 386 amd64 amd64p32 arm
+    syn match   goBuildDirective    display contained "+build"
+    syn region  goBuildComment      start="//\s*+build" end="$" contains=goBuildDirective,goBuildOs,goBuildArch
+    syn region  goBuildComment      start="/\*\s*+build" end="\*/" contains=goBuildDirective,goBuildOs,goBuildArch
+endif
+
+hi def link     goBuildComment      Comment
+hi def link     goBuildOs           Type
+hi def link     goBuildArch         Type
+hi def link     goBuildDirective    PreProc
+
 
 " Search backwards for a global declaration to start processing the syntax.
 "syn sync match goSync grouphere NONE /^\(const\|var\|type\|func\)\>/

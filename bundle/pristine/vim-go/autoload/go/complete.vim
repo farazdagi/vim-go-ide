@@ -19,13 +19,21 @@ fu! s:gocodeCurrentBuffer()
     return file
 endf
 
-let s:vim_system = get(g:, 'gocomplete#system_function', 'system')
+
+if go#vimproc#has_vimproc()
+    let s:vim_system = get(g:, 'gocomplete#system_function', 'vimproc#system2')
+else
+    let s:vim_system = get(g:, 'gocomplete#system_function', 'system')
+endif
 
 fu! s:system(str, ...)
     return call(s:vim_system, [a:str] + a:000)
 endf
 
 fu! s:gocodeShellescape(arg)
+    if go#vimproc#has_vimproc()
+        return vimproc#shellescape(a:arg)
+    endif
     try
         let ssl_save = &shellslash
         set noshellslash
@@ -43,12 +51,20 @@ fu! s:gocodeCommand(cmd, preargs, args)
         let a:preargs[i] = s:gocodeShellescape(a:preargs[i])
     endfor
 
-    let bin_path = go#tool#BinPath(g:go_gocode_bin)
+    let bin_path = go#path#CheckBinPath(g:go_gocode_bin)
     if empty(bin_path)
         return
     endif
 
-    let result = s:system(printf('%s %s %s %s', bin_path, join(a:preargs), a:cmd, join(a:args)))
+    " we might hit cache problems, as gocode doesn't handle well different
+    " GOPATHS: https://github.com/nsf/gocode/issues/239
+    let old_gopath = $GOPATH
+    let $GOPATH = go#path#Detect()
+
+    let result = s:system(printf('%s %s %s %s', s:gocodeShellescape(bin_path), join(a:preargs), s:gocodeShellescape(a:cmd), join(a:args)))
+
+    let $GOPATH = old_gopath
+
     if v:shell_error != 0
         return "[\"0\", []]"
     else
@@ -130,6 +146,11 @@ function! go#complete#Info()
     endif
 endfunction
 
+function! s:trim_bracket(val)
+    let a:val.word = substitute(a:val.word, '[(){}\[\]]\+$', '', '')
+    return a:val
+endfunction
+
 fu! go#complete#Complete(findstart, base)
     "findstart = 1 when we need to get the text length
     if a:findstart == 1
@@ -137,6 +158,10 @@ fu! go#complete#Complete(findstart, base)
         return col('.') - g:gocomplete_completions[0] - 1
         "findstart = 0 when we need to return the list of completions
     else
+        let s = getline(".")[col('.') - 1]
+        if s =~ '[(){}\{\}]'
+            return map(copy(g:gocomplete_completions[1]), 's:trim_bracket(v:val)')
+        endif
         return g:gocomplete_completions[1]
     endif
 endf
