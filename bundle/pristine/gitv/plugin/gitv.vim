@@ -185,9 +185,8 @@ fu! s:IsCompatible() "{{{
     return exists('g:loaded_fugitive')
 endfu "}}}
 fu! s:CompleteGitv(arglead, cmdline, pos) "{{{
-    return fugitive#buffer().repo().git_chomp('rev-parse', '--symbolic', '--branches', '--tags', '--remotes')
-                \ . "\nHEAD\nFETCH_HEAD\nORIG_HEAD"
-                \ . "\n--after\n--all-match\n--ancestry-path\n--author-date-order"
+    if match( a:arglead, '^-' ) >= 0
+        return  "\n--after\n--all-match\n--ancestry-path\n--author-date-order"
                 \ . "\n--author=\n--author=\n--before=\n--bisect\n--boundary"
                 \ . "\n--branches\n--cherry-mark\n--cherry-pick\n--committer="
                 \ . "\n--date-order\n--dense\n--exclude=\n--first-parent"
@@ -196,6 +195,17 @@ fu! s:CompleteGitv(arglead, cmdline, pos) "{{{
                 \ . "\n--min-parents=\n--not\n--pickaxe-all\n--pickaxe-regex"
                 \ . "\n--regexp-ignore-case\n--remotes\n--remove-empty\n--since="
                 \ . "\n--skip\n--tags\n--topo-order\n--until=\n--use-mailmap"
+    else
+        let refs = fugitive#buffer().repo().git_chomp('rev-parse', '--symbolic', '--branches', '--tags', '--remotes')
+        let refs .= "\nHEAD\nFETCH_HEAD\nORIG_HEAD"
+
+        " Complete ref names preceded by a ^ or anything followed by 2-3 dots
+        let prefix = matchstr( a:arglead, '\v^(\^|.*\.\.\.?)' )
+        if prefix == ''
+            return refs
+        else
+            return substitute( refs, "\\v(^|\n)\\zs", prefix, 'g' )
+        endif
 endf "}}}
 fu! s:OpenBrowserMode(extraArgs) "{{{
     "this throws an exception if not a git repo which is caught immediately
@@ -261,9 +271,10 @@ fu! s:ToggleArg(args, toggle) "{{{
 endf "}}}
 fu! s:ConstructAndExecuteCmd(direction, commitCount, extraArgs, filePath, range) "{{{
     if a:range == [] "no range, setup and execute the command
-        let cmd  = "log " . a:extraArgs
+        let cmd  = "log " 
         let cmd .= " --no-color --decorate=full --pretty=format:\"%d %s__SEP__%ar__SEP__%an__SEP__[%h]\" --graph -"
         let cmd .= a:commitCount
+        let cmd .= " " . a:extraArgs
         if a:filePath != ''
             let cmd .= ' -- ' . a:filePath
         endif
@@ -319,7 +330,7 @@ fu! s:GetFileSlices(range, filePath, commitCount, extraArgs) "{{{
     let range     = substitute(range, "'", "'\\\\''", 'g') "force unix style escaping even on windows
     let git       = fugitive#buffer().repo().git_command()
     let sliceCmd  = "for hash in `".git." log " . a:extraArgs
-    let sliceCmd .= " --no-color --pretty=format:%H -".a:commitCount."-- " . a:filePath . '`; '
+    let sliceCmd .= " --no-color --pretty=format:%H -".a:commitCount." -- " . a:filePath . '`; '
     let sliceCmd .= "do "
     let sliceCmd .= 'echo "****${hash}"; '
     let sliceCmd .= git." --no-pager blame -s -L '" . range . "' ${hash} " . a:filePath . "; "
