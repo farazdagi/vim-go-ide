@@ -43,6 +43,12 @@ function! s:source.hooks.on_init(context) "{{{
   let g:neocomplete#sources#tags#cache_limit_size =
         \ get(g:, 'neocomplete#sources#tags#cache_limit_size', 500000)
 
+  augroup neocomplete "{{{
+    autocmd VimLeavePre * call neocomplete#helper#clean('tags_cache')
+    autocmd VimLeavePre * call neocomplete#helper#clean('tags_patterns')
+    autocmd BufWritePost * call neocomplete#sources#tag#make_cache(0)
+  augroup END"}}}
+
   " Create cache directory.
   call neocomplete#cache#make_directory('tags_cache')
 endfunction"}}}
@@ -83,7 +89,7 @@ function! s:initialize_tags(filename) "{{{
         \ 'cachename' : neocomplete#cache#async_load_from_tags(
         \              'tags_cache', a:filename,
         \              neocomplete#get_keyword_pattern(ft, s:source.name),
-        \              ft, s:source.mark, 0)
+        \              ft, s:source.mark)
         \ }
 endfunction"}}}
 function! neocomplete#sources#tag#make_cache(force) "{{{
@@ -94,7 +100,11 @@ function! neocomplete#sources#tag#make_cache(force) "{{{
   let bufnumber = bufnr('%')
 
   let s:async_tags_list[bufnumber] = []
-  for tags in map(filter(tagfiles(), 'getfsize(v:val) > 0'),
+  let tagfiles = tagfiles()
+  if get(g:, 'loaded_neoinclude', 0)
+    let tagfiles += neoinclude#include#get_tag_files()
+  endif
+  for tags in map(filter(tagfiles, 'getfsize(v:val) > 0'),
         \ "neocomplete#util#substitute_path_separator(
         \    fnamemodify(v:val, ':p'))")
     if tags !~? '/doc/tags\%(-\w\+\)\?$' &&

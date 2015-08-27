@@ -63,8 +63,6 @@ let g:neocomplete#enable_auto_delimiter =
       \ get(g:, 'neocomplete#enable_auto_delimiter', 0)
 let g:neocomplete#lock_buffer_name_pattern =
       \ get(g:, 'neocomplete#lock_buffer_name_pattern', '')
-let g:neocomplete#ctags_command =
-      \ get(g:, 'neocomplete#ctags_command', 'ctags')
 let g:neocomplete#lock_iminsert =
       \ get(g:, 'neocomplete#lock_iminsert', 0)
 let g:neocomplete#enable_multibyte_completion =
@@ -74,7 +72,7 @@ let g:neocomplete#release_cache_time =
 let g:neocomplete#skip_auto_completion_time =
       \ get(g:, 'neocomplete#skip_auto_completion_time', '0.3')
 let g:neocomplete#enable_auto_close_preview =
-      \ get(g:, 'neocomplete#enable_auto_close_preview', 1)
+      \ get(g:, 'neocomplete#enable_auto_close_preview', 0)
 let g:neocomplete#fallback_mappings =
       \ get(g:, 'neocomplete#fallback_mappings', [])
 let g:neocomplete#sources =
@@ -85,8 +83,6 @@ let g:neocomplete#same_filetypes =
       \ get(g:, 'neocomplete#same_filetypes', {})
 let g:neocomplete#delimiter_patterns =
       \ get(g:, 'neocomplete#delimiter_patterns', {})
-let g:neocomplete#ctags_arguments =
-      \ get(g:, 'neocomplete#ctags_arguments', {})
 let g:neocomplete#text_mode_filetypes =
       \ get(g:, 'neocomplete#text_mode_filetypes', {})
 let g:neocomplete#tags_filter_patterns =
@@ -185,6 +181,7 @@ function! neocomplete#is_enabled() "{{{
 endfunction"}}}
 function! neocomplete#is_locked(...) "{{{
   return neocomplete#is_cache_disabled() || &paste
+        \ || (&t_Co != '' && &t_Co < 8)
         \ || g:neocomplete#disable_auto_complete
 endfunction"}}}
 function! neocomplete#is_cache_disabled() "{{{
@@ -234,10 +231,10 @@ function! neocomplete#within_comment() "{{{
   return neocomplete#get_current_neocomplete().within_comment
 endfunction"}}}
 function! neocomplete#print_error(string) "{{{
-  echohl Error | echomsg a:string | echohl None
+  echohl Error | echomsg '[neocomplete] ' . a:string | echohl None
 endfunction"}}}
 function! neocomplete#print_warning(string) "{{{
-  echohl WarningMsg | echomsg a:string | echohl None
+  echohl WarningMsg | echomsg '[neocomplete] ' . a:string | echohl None
 endfunction"}}}
 function! neocomplete#head_match(checkstr, headstr) "{{{
   let checkstr = &ignorecase ?
@@ -310,6 +307,15 @@ endfunction"}}}
 function! neocomplete#skip_next_complete() "{{{
   let neocomplete = neocomplete#get_current_neocomplete()
   let neocomplete.skip_next_complete = 1
+endfunction"}}}
+function! neocomplete#get_default_matchers() "{{{
+  return map(copy(neocomplete#get_current_neocomplete().default_matchers),
+        \ 'v:val.name')
+endfunction"}}}
+function! neocomplete#set_default_matchers(matchers) "{{{
+  let neocomplete = neocomplete#get_current_neocomplete()
+  let neocomplete.default_matchers = neocomplete#init#_filters(
+        \ neocomplete#util#convert2list(a:matchers))
 endfunction"}}}
 
 function! neocomplete#set_dictionary_helper(variable, keys, value) "{{{

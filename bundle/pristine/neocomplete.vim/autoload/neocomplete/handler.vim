@@ -58,7 +58,6 @@ function! neocomplete#handler#_on_insert_leave() "{{{
 
   let neocomplete = neocomplete#get_current_neocomplete()
   let neocomplete.cur_text = ''
-  let neocomplete.completed_item = {}
   let neocomplete.overlapped_items = {}
 endfunction"}}}
 function! neocomplete#handler#_on_write_post() "{{{
@@ -75,51 +74,21 @@ function! neocomplete#handler#_on_write_post() "{{{
           \ 'neocomplete_foldinfo', {})
   endfor
 endfunction"}}}
-" @vimlint(EVL102, 1, v:completed_item)
 function! neocomplete#handler#_on_complete_done() "{{{
-  let neocomplete = neocomplete#get_current_neocomplete()
-
-  " Get cursor word.
-  if exists('v:completed_item')
-    " Use v:completed_item feature.
-    if empty(v:completed_item)
-      return
-    endif
-
-    let complete_str = v:completed_item.word
-    if complete_str == ''
-      return
-    endif
-
-    if (v:completed_item.abbr != ''
-          \ && len(v:completed_item.word) < len(v:completed_item.abbr))
-          \ || v:completed_item.info != ''
-      let neocomplete.completed_item = v:completed_item
-    endif
-  else
-    let cur_text = matchstr(getline('.'), '^.*\%'.col('.').'c')
-    let complete_str = neocomplete#helper#match_word(cur_text)[1]
-    if complete_str == ''
-      " Use default keyword pattern.
-      let complete_str = matchstr(cur_text, '\h\w*\(()\?\)\?$')
-      if complete_str == ''
-        return
-      endif
-    endif
-
-    let candidates = filter(copy(neocomplete.candidates),
-          \   "v:val.word ==# complete_str &&
-          \    ((get(v:val, 'abbr', '') != '' &&
-          \     v:val.word !=# v:val.abbr && v:val.abbr[-1] != '~') ||
-          \     get(v:val, 'info', '') != '')")
-    if !empty(candidates)
-      let neocomplete.completed_item = candidates[0]
-    endif
+  " Use v:completed_item feature.
+  if empty(v:completed_item)
+    return
   endif
 
+  let complete_str = v:completed_item.word
+  if complete_str == ''
+    return
+  endif
+
+  let neocomplete = neocomplete#get_current_neocomplete()
+
   " Restore overlapped item
-  if exists('v:completed_item') &&
-        \ has_key(neocomplete.overlapped_items, complete_str)
+  if has_key(neocomplete.overlapped_items, complete_str)
     " Move cursor
     call cursor(0, col('.') - len(complete_str) +
           \ len(neocomplete.overlapped_items[complete_str]))
@@ -134,7 +103,6 @@ function! neocomplete#handler#_on_complete_done() "{{{
     let frequencies[complete_str] += 20
   endif
 endfunction"}}}
-" @vimlint(EVL102, 0, v:completed_item)
 function! neocomplete#handler#_change_update_time() "{{{
   if &updatetime > g:neocomplete#cursor_hold_i_time
     " Change updatetime.
@@ -167,18 +135,35 @@ function! neocomplete#handler#_on_text_changed() "{{{
     return
   endif
 
+  let neocomplete = neocomplete#get_current_neocomplete()
+
+  if g:neocomplete#enable_insert_char_pre
+        \ && neocomplete.skip_next_complete
+    call neocomplete#handler#_do_auto_complete('InsertCharPre')
+  endif
+
   if getline('.') == ''
     call s:make_cache_current_line()
   endif
 
-  let cur_text = matchstr(getline('.'), '^.*\%'.col('.').'c')
   " indent line matched by indentkeys
+  let cur_text = matchstr(getline('.'), '^.*\%'.col('.').'c')
+  if neocomplete.indent_text == matchstr(getline('.'), '\S.*$')
+    return
+  endif
+
   for word in filter(map(split(&l:indentkeys, ','),
         \ "v:val =~ '^<.*>$' ? matchstr(v:val, '^<\\zs.*\\ze>$')
-        \                  : matchstr(v:val, '.*=\\zs.*')"),
+        \                  : matchstr(v:val, 'e\\|=\\zs.*')"),
         \ "v:val != ''")
+
+    if word ==# 'e'
+      let word = 'else'
+    endif
+
     if stridx(cur_text, word, len(cur_text)-len(word)-1) >= 0
       call neocomplete#helper#indent_current_line()
+      let neocomplete.indent_text = matchstr(getline('.'), '\S.*$')
       break
     endif
   endfor
@@ -194,6 +179,7 @@ function! neocomplete#handler#_do_auto_complete(event) "{{{
   let neocomplete.event = a:event
 
   let cur_text = neocomplete#get_cur_text(1)
+  let complete_pos = -1
 
   call neocomplete#print_debug('cur_text = ' . cur_text)
 
@@ -204,9 +190,8 @@ function! neocomplete#handler#_do_auto_complete(event) "{{{
       return
     endif
 
-    if neocomplete#helper#is_omni(cur_text)
-          \ && neocomplete.old_cur_text !=# cur_text
-      call s:complete_key("\<Plug>(neocomplete_start_omni_complete)")
+    let complete_pos = s:check_force_omni(cur_text)
+    if complete_pos >= 0
       return
     endif
 
@@ -218,69 +203,38 @@ function! neocomplete#handler#_do_auto_complete(event) "{{{
       return
     endif
 
-    " Check complete position.
-    let complete_sources = neocomplete#complete#_set_results_pos(cur_text)
-    if empty(complete_sources)
-      call neocomplete#print_debug('Skipped.')
+    try
+      let neocomplete.is_auto_complete = 1
+
+      " Do prefetch.
+      let neocomplete.complete_sources =
+            \ neocomplete#complete#_get_results(cur_text)
+    finally
+      let neocomplete.is_auto_complete = 0
+    endtry
+
+    if empty(neocomplete.complete_sources)
+      let complete_pos = s:check_fallback(cur_text)
       return
     endif
 
-    " Check previous position
-    let complete_pos = neocomplete#complete#_get_complete_pos(complete_sources)
-    if neocomplete.skip_next_complete
-          \ && complete_pos == neocomplete.old_complete_pos
-          \ && stridx(cur_text, neocomplete.old_cur_text) == 0
-      " Same position.
+    let complete_pos =
+          \ neocomplete#complete#_get_complete_pos(
+          \ neocomplete.complete_sources)
+    let base = cur_text[complete_pos :]
+
+    let neocomplete.candidates = neocomplete#complete#_get_words(
+          \ neocomplete.complete_sources, complete_pos, base)
+    if empty(neocomplete.candidates)
       return
     endif
+
+    " Start auto complete.
+    call s:complete_key(
+          \ "\<Plug>(neocomplete_start_auto_complete)")
   finally
-    let neocomplete.old_cur_text = cur_text
-    let neocomplete.old_linenr = line('.')
+    call neocomplete#complete#_set_previous_position(cur_text, complete_pos)
   endtry
-
-  let neocomplete.skip_next_complete = 0
-  let neocomplete.old_complete_pos = complete_pos
-
-  try
-    let neocomplete.is_auto_complete = 1
-
-    " Do prefetch.
-    let neocomplete.complete_sources =
-          \ neocomplete#complete#_get_results(cur_text)
-  finally
-    let neocomplete.is_auto_complete = 0
-  endtry
-
-  if empty(neocomplete.complete_sources)
-    if !empty(g:neocomplete#fallback_mappings)
-          \ && len(matchstr(cur_text, '\h\w*$'))
-          \   >= g:neocomplete#auto_completion_start_length
-      let key = ''
-      for i in range(0, len(g:neocomplete#fallback_mappings)-1)
-        let key .= '<C-r>=neocomplete#mappings#fallback(' . i . ')<CR>'
-      endfor
-      execute 'inoremap <silent> <Plug>(neocomplete_fallback)' key
-
-      " Fallback to omnifunc
-      call s:complete_key("\<Plug>(neocomplete_fallback)")
-    else
-      call neocomplete#print_debug('Skipped.')
-      return
-    endif
-    return
-  endif
-
-  let complete_pos =
-        \ neocomplete#complete#_get_complete_pos(
-        \ neocomplete.complete_sources)
-  let base = cur_text[complete_pos :]
-
-  let neocomplete.candidates = neocomplete#complete#_get_words(
-        \ neocomplete.complete_sources, complete_pos, base)
-
-  " Start auto complete.
-  call s:complete_key(
-        \ "\<Plug>(neocomplete_start_auto_complete)")
 endfunction"}}}
 
 function! s:check_in_do_auto_complete() "{{{
@@ -292,28 +246,20 @@ function! s:check_in_do_auto_complete() "{{{
   if &l:completefunc != '' && &l:buftype =~ 'nofile'
     return 1
   endif
-
-  " Detect AutoComplPop.
-  if exists('g:acp_enableAtStartup') && g:acp_enableAtStartup
-    call neocomplete#print_error(
-          \ 'Detected enabled AutoComplPop! Disabled neocomplete.')
-    NeoCompleteLock
-    return 1
-  endif
 endfunction"}}}
 function! s:is_skip_auto_complete(cur_text) "{{{
   let neocomplete = neocomplete#get_current_neocomplete()
 
-  if (a:cur_text == neocomplete.old_cur_text
-        \     && line('.') == neocomplete.old_linenr)
-        \ || (g:neocomplete#lock_iminsert && &l:iminsert)
+  if (g:neocomplete#lock_iminsert && &l:iminsert)
         \ || (&l:formatoptions =~# '[tca]' && &l:textwidth > 0
         \     && strwidth(a:cur_text) >= &l:textwidth)
     let neocomplete.skip_next_complete = 0
     return 1
   endif
 
-  if !neocomplete.skip_next_complete
+  let skip = neocomplete.skip_next_complete
+
+  if !skip
     return 0
   endif
 
@@ -330,17 +276,14 @@ function! s:is_skip_auto_complete(cur_text) "{{{
     endif
   endfor
 
-  if is_delimiter && neocomplete.skip_next_complete == 2
-    let neocomplete.skip_next_complete = 0
-  endif
-
-  return 0
+  let neocomplete.skip_next_complete = 0
+  return !(is_delimiter && skip == 2)
 endfunction"}}}
 function! s:close_preview_window() "{{{
   if g:neocomplete#enable_auto_close_preview
         \ && bufname('%') !=# '[Command Line]'
         \ && winnr('$') != 1 && !&l:previewwindow
-        \ && !s:check_in_do_auto_complete()
+        \ && !neocomplete#is_cache_disabled()
     " Close preview window.
     pclose!
   endif
@@ -358,10 +301,46 @@ function! s:make_cache_current_line() "{{{
     call neocomplete#sources#member#make_cache_current_line()
   endif
 endfunction"}}}
+function! s:check_force_omni(cur_text) "{{{
+  let cur_text = a:cur_text
+  let complete_pos = neocomplete#helper#get_force_omni_complete_pos(cur_text)
+
+  if complete_pos >= 0
+        \ && !neocomplete#complete#_check_previous_position(
+        \       cur_text, complete_pos)
+    call s:complete_key("\<Plug>(neocomplete_start_omni_complete)")
+  endif
+
+  return complete_pos
+endfunction"}}}
+function! s:check_fallback(cur_text) "{{{
+  let cur_text = a:cur_text
+  let complete_pos = match(cur_text, '\h\w*$')
+  let neocomplete = neocomplete#get_current_neocomplete()
+  if !empty(g:neocomplete#fallback_mappings)
+        \ && len(matchstr(cur_text, '\h\w*$'))
+        \   >= g:neocomplete#auto_completion_start_length
+        \ && !neocomplete.skip_next_complete
+        \ && !neocomplete#complete#_check_previous_position(
+        \      cur_text, complete_pos)
+    let key = ''
+    for i in range(0, len(g:neocomplete#fallback_mappings)-1)
+      let key .= '<C-r>=neocomplete#mappings#fallback(' . i . ')<CR>'
+    endfor
+    execute 'inoremap <silent> <Plug>(neocomplete_fallback)' key
+
+    " Fallback
+    call s:complete_key("\<Plug>(neocomplete_fallback)")
+
+    return complete_pos
+  endif
+
+  return -1
+endfunction"}}}
 
 function! s:complete_key(key) "{{{
-  set completeopt-=longest
   call neocomplete#helper#complete_configure()
+
   call feedkeys(a:key)
 endfunction"}}}
 

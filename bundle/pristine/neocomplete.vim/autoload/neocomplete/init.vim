@@ -35,6 +35,12 @@ function! neocomplete#init#enable() "{{{
     return
   endif
 
+  if !(has('lua') && (v:version > 703 || v:version == 703 && has('patch885')))
+    echomsg 'neocomplete does not work with this version of Vim.'
+    echomsg 'It requires Vim 7.3.885 or later with Lua support ("+lua").'
+    return
+  endif
+
   if !exists('b:neocomplete')
     call neocomplete#init#_current_neocomplete()
   endif
@@ -44,14 +50,14 @@ function! neocomplete#init#enable() "{{{
   call neocomplete#init#_sources(get(g:neocomplete#sources,
         \ neocomplete#get_context_filetype(), ['_']))
 
-  doautocmd <nomodeline> neocomplete InsertEnter
-
   let s:is_enabled = 1
+
+  doautocmd <nomodeline> neocomplete InsertEnter
 endfunction"}}}
 
 function! neocomplete#init#disable() "{{{
   if !neocomplete#is_enabled()
-    call neocomplete#init#enable()
+    return
   endif
 
   let s:is_enabled = 0
@@ -92,10 +98,7 @@ function! neocomplete#init#_autocmds() "{{{
           \ call neocomplete#init#disable()
   augroup END
 
-  if g:neocomplete#enable_insert_char_pre
-    autocmd neocomplete InsertCharPre *
-          \ call neocomplete#handler#_do_auto_complete('InsertCharPre')
-  elseif g:neocomplete#enable_cursor_hold_i
+  if g:neocomplete#enable_cursor_hold_i
     augroup neocomplete
       autocmd CursorHoldI *
             \ call neocomplete#handler#_do_auto_complete('CursorHoldI')
@@ -105,14 +108,25 @@ function! neocomplete#init#_autocmds() "{{{
             \ call neocomplete#handler#_restore_update_time()
     augroup END
   else
-    autocmd neocomplete CursorMovedI *
-          \ call neocomplete#handler#_do_auto_complete('CursorMovedI')
+    " Note: Vim 7.4.143 fixed TextChangedI bug.
+    let event =
+          \ (g:neocomplete#enable_insert_char_pre) ?
+          \  'InsertCharPre' :
+          \ (v:version > 704 || v:version == 704 && has('patch143')) ?
+          \  'TextChangedI' : 'CursorMovedI'
+    execute 'autocmd neocomplete' event '*'
+          \ 'call neocomplete#handler#_do_auto_complete("'.event.'")'
+  endif
+
+  if !g:neocomplete#enable_cursor_hold_i
     autocmd neocomplete InsertEnter *
           \ call neocomplete#handler#_do_auto_complete('InsertEnter')
   endif
 
-  autocmd neocomplete CompleteDone *
-        \ call neocomplete#handler#_on_complete_done()
+  if exists('v:completed_item')
+    autocmd neocomplete CompleteDone *
+          \ call neocomplete#handler#_on_complete_done()
+  endif
 endfunction"}}}
 
 function! neocomplete#init#_others() "{{{
@@ -131,6 +145,12 @@ function! neocomplete#init#_others() "{{{
     call neocomplete#print_error(output)
     call neocomplete#print_error(
           \ 'Detected set paste! Disabled neocomplete.')
+  endif
+
+  " Detect poor color
+  if &t_Co != '' && &t_Co < 8
+    call neocomplete#print_error(
+          \ 'Your terminal color is very limited. Disabled neocomplete.')
   endif
 
   command! -nargs=0 -bar NeoCompleteDisable
@@ -523,36 +543,6 @@ function! neocomplete#init#_variables() "{{{
         \ 'perl6', ['.', '::'])
   "}}}
 
-  " Initialize ctags arguments. "{{{
-  call neocomplete#util#set_default_dictionary(
-        \ 'g:neocomplete#ctags_arguments',
-        \ '_', '')
-  call neocomplete#util#set_default_dictionary(
-        \ 'g:neocomplete#ctags_arguments', 'vim',
-        \ '--language-force=vim --extra=fq --fields=afmiKlnsStz ' .
-        \ "--regex-vim='/function!? ([a-z#:_0-9A-Z]+)/\\1/function/'")
-  if neocomplete#util#is_mac()
-    call neocomplete#util#set_default_dictionary(
-          \ 'g:neocomplete#ctags_arguments', 'c',
-          \ '--c-kinds=+p --fields=+iaS --extra=+q
-          \ -I__DARWIN_ALIAS,__DARWIN_ALIAS_C,__DARWIN_ALIAS_I,__DARWIN_INODE64
-          \ -I__DARWIN_1050,__DARWIN_1050ALIAS,__DARWIN_1050ALIAS_C,__DARWIN_1050ALIAS_I,__DARWIN_1050INODE64
-          \ -I__DARWIN_EXTSN,__DARWIN_EXTSN_C
-          \ -I__DARWIN_LDBL_COMPAT,__DARWIN_LDBL_COMPAT2')
-  else
-    call neocomplete#util#set_default_dictionary(
-          \ 'g:neocomplete#ctags_arguments', 'c',
-          \ '-R --sort=1 --c-kinds=+p --fields=+iaS --extra=+q ' .
-          \ '-I __wur,__THROW,__attribute_malloc__,__nonnull+,'.
-          \   '__attribute_pure__,__attribute_warn_unused_result__,__attribute__+')
-  endif
-  call neocomplete#util#set_default_dictionary(
-        \ 'g:neocomplete#ctags_arguments', 'cpp',
-        \ '--language-force=C++ -R --sort=1 --c++-kinds=+p --fields=+iaS --extra=+q '.
-        \ '-I __wur,__THROW,__attribute_malloc__,__nonnull+,'.
-        \   '__attribute_pure__,__attribute_warn_unused_result__,__attribute__+')
-  "}}}
-
   " Initialize text mode filetypes. "{{{
   call neocomplete#util#set_default_dictionary(
         \ 'g:neocomplete#text_mode_filetypes',
@@ -615,12 +605,16 @@ function! neocomplete#init#_current_neocomplete() "{{{
         \ 'start_time' : reltime(),
         \ 'linenr' : 0,
         \ 'completeopt' : &completeopt,
-        \ 'completed_item' : {},
         \ 'overlapped_items' : {},
         \ 'sources' : [],
         \ 'sources_filetype' : '',
         \ 'within_comment' : 0,
         \ 'is_auto_complete' : 0,
+        \ 'indent_text' : '',
+        \ 'default_matchers' : neocomplete#init#_filters(
+        \  (g:neocomplete#enable_fuzzy_completion ?
+        \   ['matcher_fuzzy'] : ['matcher_head'])
+        \  + ['matcher_length']),
         \}
 endfunction"}}}
 
@@ -681,15 +675,11 @@ function! neocomplete#init#_source(source) "{{{
         \ 'disabled_filetypes' : {},
         \ 'hooks' : {},
         \ 'mark' : '',
-        \ 'matchers' :
-        \        (g:neocomplete#enable_fuzzy_completion ?
-        \          ['matcher_fuzzy'] : ['matcher_head'])
-        \      + ['matcher_length'],
+        \ 'matchers' : [],
         \ 'sorters' : ['sorter_rank'],
         \ 'converters' : [
         \      'converter_remove_overlap',
         \      'converter_delimiter',
-        \      'converter_case',
         \      'converter_abbr',
         \ ],
         \ 'keyword_patterns' : g:neocomplete#keyword_patterns,

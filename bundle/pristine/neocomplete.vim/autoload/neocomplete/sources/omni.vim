@@ -97,6 +97,10 @@ function! s:source.hooks.on_init(context) "{{{
         \'g:neocomplete#sources#omni#input_patterns',
         \'clojure',
         \'\%(([^)]\+\)\|\*[[:alnum:]_-]\+')
+  call neocomplete#util#set_default_dictionary(
+        \'g:neocomplete#sources#omni#input_patterns',
+        \'rust',
+        \'[^.[:digit:] *\t]\%(\.\|\::\)\%(\h\w*\)\?')
 
   " External language interface check.
   if has('ruby')
@@ -104,8 +108,7 @@ function! s:source.hooks.on_init(context) "{{{
           "\'g:neocomplete#sources#omni#input_patterns', 'ruby',
           "\'[^. *\t]\.\h\w*\|\h\w*::\w*')
   endif
-  if has('python/dyn') || has('python3/dyn')
-        \ || has('python') || has('python3')
+  if has('python') || has('python3')
     call neocomplete#util#set_default_dictionary(
           \'g:neocomplete#sources#omni#input_patterns',
           \'python', '[^. \t]\.\w*')
@@ -183,7 +186,8 @@ function! s:set_complete_results_pos(funcs, cur_text) "{{{
   let complete_results = {}
   for [omnifunc, pattern] in a:funcs
     if neocomplete#is_auto_complete()
-          \ && a:cur_text !~# '\%(' . pattern . '\m\)$'
+          \ && (pattern == ''
+          \     || a:cur_text !~# '\%(' . pattern . '\m\)$')
       continue
     endif
 

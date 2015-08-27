@@ -31,7 +31,8 @@ function! neocomplete#helper#get_cur_text(...) "{{{
   let is_skip_char = get(a:000, 0, 0)
 
   let cur_text =
-        \ (mode() ==# 'i' ? (col('.')-1) : col('.')) >= len(getline('.')) ?
+        \ ((neocomplete.event ==# 'InsertEnter' || mode() ==# 'i') ?
+        \   (col('.')-1) : col('.')) >= len(getline('.')) ?
         \      getline('.') :
         \      matchstr(getline('.'),
         \         '^.*\%' . (mode() ==# 'i' && !is_skip_char ?
@@ -55,42 +56,42 @@ function! neocomplete#helper#get_cur_text(...) "{{{
   return neocomplete.cur_text
 endfunction"}}}
 
-function! neocomplete#helper#is_omni(cur_text) "{{{
+function! neocomplete#helper#get_force_omni_complete_pos(cur_text) "{{{
   " Check eskk complete length.
   if neocomplete#is_eskk_enabled()
         \ && exists('g:eskk#start_completion_length')
     if !neocomplete#is_eskk_convertion(a:cur_text)
           \ || !neocomplete#is_multibyte_input(a:cur_text)
-      return 0
+      return -1
     endif
 
     let complete_pos = call(&l:omnifunc, [1, ''])
     let complete_str = a:cur_text[complete_pos :]
-    return neocomplete#util#mb_strlen(complete_str) >=
-          \ g:eskk#start_completion_length
+    return (neocomplete#util#mb_strlen(complete_str) >=
+          \ g:eskk#start_completion_length) ? complete_pos : -1
   endif
 
   let filetype = neocomplete#get_context_filetype()
   let omnifunc = &l:omnifunc
 
   if neocomplete#helper#check_invalid_omnifunc(omnifunc)
-    return 0
+    return -1
   endif
+
+  let pattern = ''
 
   if has_key(g:neocomplete#force_omni_input_patterns, omnifunc)
     let pattern = g:neocomplete#force_omni_input_patterns[omnifunc]
   elseif filetype != '' &&
         \ get(g:neocomplete#force_omni_input_patterns, filetype, '') != ''
     let pattern = g:neocomplete#force_omni_input_patterns[filetype]
-  else
-    return 0
   endif
 
-  if a:cur_text !~# '\%(' . pattern . '\m\)$'
-    return 0
+  if pattern == ''
+    return -1
   endif
 
-  return 1
+  return match(a:cur_text, '\%(' . pattern . '\m\)$')
 endfunction"}}}
 
 function! neocomplete#helper#is_enabled_source(source, filetype) "{{{
@@ -130,7 +131,11 @@ function! neocomplete#helper#get_source_filetypes(filetype) "{{{
     call add(filetypes, 'text')
   endif
 
-  return neocomplete#util#uniq(filetypes)
+  if len(filetypes) > 1
+    let filetypes = neocomplete#util#uniq(filetypes)
+  endif
+
+  return filetypes
 endfunction"}}}
 
 function! neocomplete#helper#complete_check() "{{{
@@ -309,9 +314,9 @@ function! neocomplete#helper#call_hook(sources, hook_name, context) "{{{
       call neocomplete#print_error(v:throwpoint)
       call neocomplete#print_error(v:exception)
       call neocomplete#print_error(
-            \ '[unite.vim] Error occurred in calling hook "' . a:hook_name . '"!')
+            \ 'Error occurred in calling hook "' . a:hook_name . '"!')
       call neocomplete#print_error(
-            \ '[unite.vim] Source name is ' . source.name)
+            \ 'Source name is ' . source.name)
     endtry
   endfor
 endfunction"}}}
@@ -325,10 +330,10 @@ function! neocomplete#helper#call_filters(filters, source, context) "{{{
       call neocomplete#print_error(v:throwpoint)
       call neocomplete#print_error(v:exception)
       call neocomplete#print_error(
-            \ '[unite.vim] Error occurred in calling filter '
+            \ 'Error occurred in calling filter '
             \   . filter.name . '!')
       call neocomplete#print_error(
-            \ '[unite.vim] Source name is ' . a:source.name)
+            \ 'Source name is ' . a:source.name)
     endtry
   endfor
 
@@ -383,13 +388,26 @@ function! neocomplete#helper#complete_configure() "{{{
   let neocomplete.completeopt = &completeopt
 
   if neocomplete#util#is_complete_select()
+        \ && &completeopt !~# 'noinsert\|noselect'
     if g:neocomplete#enable_auto_select
       set completeopt-=noselect
       set completeopt+=noinsert
     else
-      set completeopt+=noinsert,noselect
+      set completeopt-=noinsert
+      set completeopt+=noselect
     endif
   endif
+endfunction"}}}
+
+function! neocomplete#helper#clean(directory) "{{{
+  let directory = neocomplete#get_data_directory() .'/'.a:directory
+  for file in split(glob(directory . '/*'), '\n')
+    let orig = substitute(substitute(fnamemodify(file, ':t'),
+        \             '=-', ':', 'g'), '=+', '/', 'g')
+    if !filereadable(orig)
+      call delete(file)
+    endif
+  endfor
 endfunction"}}}
 
 function! s:save_foldinfo() "{{{

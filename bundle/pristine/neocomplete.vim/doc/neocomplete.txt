@@ -1,6 +1,6 @@
 *neocomplete.txt*	Next generation of auto completion framework.
 
-Version: 2.0
+Version: 2.2
 Author: Shougo <Shougo.Matsu@gmail.com>
 License: MIT license  {{{
     Permission is hereby granted, free of charge, to any person obtaining
@@ -173,8 +173,14 @@ https://github.com/Shougo/context_filetype.vim
 
 						*neocomplete-include*
 
-If you want to complete from include files or include files, you need to
-install the neoinclude plugin (https://github.com/Shougo/neoinclude.vim).
+If you want to complete the candidates from include files or include files
+candidates, you need to install the neoinclude plugin
+(https://github.com/Shougo/neoinclude.vim).
+
+						*neocomplete-syntax*
+
+If you want to complete the candidates from syntax files, you need to install
+the neco-syntax plugin (https://github.com/Shougo/neco-syntax).
 
 ==============================================================================
 INTERFACE					*neocomplete-interface*
@@ -234,13 +240,8 @@ SOURCES COMMANDS 				*neocomplete-sources-COMMANDS*
 		[bufname] automatically.
 		Note: It may take time considerably for the big buffer.
 
-:NeoCompleteSyntaxMakeCache [filetype]		*:NeoCompleteSyntaxMakeCache*
-		Make a cache from the syntax file with [filetype]
-		The current buffer's filetype is selected if [filetype]
-		is omitted
-
-:NeoCompleteDictionaryMakeCache [filetype]
 					*:NeoCompleteDictionaryMakeCache*
+:NeoCompleteDictionaryMakeCache [filetype]
 		Make a cache from a dictionary file with [filetype].
 		Selects the filetype of the current buffer if [filetype] is
 		omitted.
@@ -333,7 +334,8 @@ g:neocomplete#enable_camel_case
 g:neocomplete#disable_auto_complete
 		This variable controls whether you invalidate automatic
 		completion.  If it is 1, automatic completion becomes
-		invalid, but can use the manual completion by <C-x><C-u>.
+		invalid, but can use the manual completion by
+		|neocomplete#start_manual_complete()|.
 
 		Default value is 0.
 
@@ -357,11 +359,10 @@ g:neocomplete#cursor_hold_i_time
 g:neocomplete#enable_insert_char_pre
 		This variable controls whether neocomplete use
 		|InsertCharPre| event when complete candidates.
+		If it is enabled, the candidates will be updated after user
+		input.
 		Note: This option must be set before call
 		|:NeoCompleteEnable|.
-		Note: If the option is enabled, you cannot continue completion
-		by pressing Backspace. It is Vim's feature.
-		https://github.com/Shougo/neocomplete.vim/issues/106
 
 		Default value is 0.
 
@@ -371,6 +372,10 @@ g:neocomplete#enable_auto_select
 		whether neocomplete selects the first candidate
 		automatically.  If you enable this option, neocomplete's
 		completion behavior is like |AutoComplPop|.
+
+		Note: If you want to enable the feature in
+		|g:neocomplete#force_omni_input_patterns|, you need Vim
+		7.4.775 or above.
 
 		Default value is 0.
 
@@ -448,8 +453,7 @@ g:neocomplete#force_omni_input_patterns
 		If this pattern is not defined or empty pattern, neocomplete
 		does not call 'omnifunc'.
 		Note: If it is a set, neocomplete will call 'omnifunc'
-		directly.  So almost neocomplete features are disabled(for
-		example: auto select first candidate).  But
+		directly.  So almost neocomplete features are disabled.  But
 		all Omni completion works instead of
 		|g:neocomplete#sources#omni#input_patterns|.
 >
@@ -506,25 +510,6 @@ g:neocomplete#text_mode_filetypes
 		"FO", neocomplete will convert candidate "foo" to "FOO".
 		Note: Text mode conversion is only used for "foobar" or
 		"Foobar" or "FOOBAR" words.  Not "fooBar" or "FooBar".
-
-		Because it is complicated, refer to
-		neocomplete#init#_variables() in
-		autoload/neocomplete/init.vim for the initial value.
-
-g:neocomplete#ctags_command		*g:neocomplete#ctags_command*
-		It is the path to the ctags command.
-		Note: If this command is not installed, include source is
-		disabled.
-
-		Default value is "ctags".
-
-					*g:neocomplete#ctags_arguments*
-g:neocomplete#ctags_arguments
-		It is the dictionary of the character string to set a value
-		to give as an argument of the commands when buffer
-		and include use a ctags command.  The dictionary's
-		key is filetype.  If the key is "_", it will be used for
-		default.
 
 		Because it is complicated, refer to
 		neocomplete#init#_variables() in
@@ -626,7 +611,7 @@ g:neocomplete#enable_auto_close_preview
 		If it is non-zero, neocomplete will close preview window
 		automatically.
 
-		Default value is 1.
+		Default value is 0.
 
 					*g:neocomplete#fallback_mappings*
 g:neocomplete#fallback_mappings
@@ -677,13 +662,6 @@ g:neocomplete#sources#dictionary#dictionaries
 		Note: Global 'dictionary' file is not loaded automatically.
 
 		Default value is {}.
-
-			*g:neocomplete#sources#syntax#min_keyword_length*
-g:neocomplete#sources#syntax#min_keyword_length
-		In syntax files, this variable controls length of keyword
-		becoming the object of the completion at the minimum.
-
-		Default value is 4.
 
 				*g:neocomplete#sources#member#prefix_patterns*
 g:neocomplete#sources#member#prefix_patterns
@@ -831,6 +809,16 @@ neocomplete#disable_default_dictionary({variable-name})
 	call neocomplete#disable_default_dictionary(
 	      \ 'g:neocomplete#same_filetypes')
 <
+				*neocomplete#get_default_matchers()*
+neocomplete#get_default_matchers()
+		Get default matchers in current buffer.
+
+				*neocomplete#set_default_matchers()*
+neocomplete#set_default_matchers({names})
+		Chang default matchers in current buffer.
+>
+	call neocomplete#set_default_matchers('matcher_head')
+<
 ------------------------------------------------------------------------------
 KEY MAPPINGS 					*neocomplete-key-mappings*
 
@@ -909,8 +897,6 @@ EXAMPLES					*neocomplete-examples*
 	let g:neocomplete#enable_at_startup = 1
 	" Use smartcase.
 	let g:neocomplete#enable_smart_case = 1
-	" Set minimum syntax keyword length.
-	let g:neocomplete#sources#syntax#min_keyword_length = 3
 	let g:neocomplete#lock_buffer_name_pattern = '\*ku\*'
 
 	" Define dictionary.
@@ -947,16 +933,6 @@ EXAMPLES					*neocomplete-examples*
 	inoremap <expr><C-e>  neocomplete#cancel_popup()
 	" Close popup by <Space>.
 	"inoremap <expr><Space> pumvisible() ? neocomplete#close_popup() : "\<Space>"
-
-	" For cursor moving in insert mode(Not recommended)
-	"inoremap <expr><Left>  neocomplete#close_popup() . "\<Left>"
-	"inoremap <expr><Right> neocomplete#close_popup() . "\<Right>"
-	"inoremap <expr><Up>    neocomplete#close_popup() . "\<Up>"
-	"inoremap <expr><Down>  neocomplete#close_popup() . "\<Down>"
-	" Or set this.
-	"let g:neocomplete#enable_cursor_hold_i = 1
-	" Or set this.
-	"let g:neocomplete#enable_insert_char_pre = 1
 
 	" AutoComplPop like behavior.
 	"let g:neocomplete#enable_auto_select = 1
@@ -1024,26 +1000,13 @@ tag						*neocomplete-source-tag*
 		too slow if tag read a big tags file.  You should use
 		more convenient include source completion now.
 
-syntax						*neocomplete-source-syntax*
-		This source analyzes a syntax file like
-		autoload/syntaxcomplete.vim offered by default, and to
-		add to candidate completion.  The plugin can recognize
-		candidates a lot more than autoload/syntaxcomplete.vim.
-
-vim						*neocomplete-source-vim*
-		This source analyzes context and start Omni completion of
-		Vim script.  This plugin does not work other than editing
-		time of Vim script.  I created it because neocomplete
-		cannot call |i_CTRL-X_CTRL-V|.  Local variable and a
-		script variable, a function and the analysis of the
-		command are implemented now.
-
 dictionary					*neocomplete-source-dictionary*
 		This source adds candidates from 'dictionary' or
 		|g:neocomplete#sources#dictionary#dictionaries|.
 
 file						*neocomplete-source-file*
 		This source collects filename candidates.
+		Note: It is relative path to current buffer directory.
 
 omni						*neocomplete-source-omni*
 		This source calls 'omnifunc' automatically when cursor
@@ -1059,7 +1022,7 @@ suffix of complete candidates in popup menu declaration.
     file/include      -> [FI] {filename}
     dictionary        -> [D] {words}
     member            -> [M] member
-    buffer            -> [B] {buffername}
+    buffer            -> [B] {buffer}
     syntax            -> [S] {syntax-keyword}
     include           -> [I]
     neosnippet        -> [neosnip]
@@ -1087,6 +1050,14 @@ neco-ghc				*neocomplete-sources-neco-ghc*
 		eagletmt originally implemented and ujihisa added some new
 		features. It completes a source file written in Haskell.
 		It requires ghc-mod <http://www.mew.org/~kazu/proj/ghc-mod/>.
+
+neco-vim				*neocomplete-sources-neco-vim*
+		https://github.com/Shougo/neco-vim
+		It analyzes context and start Omni completion of Vim script.
+		It does not work other than editing time of Vim script.  I
+		created it because neocomplete cannot call |i_CTRL-X_CTRL-V|.
+		Local variable and a script variable, a function and the
+		analysis of the command are implemented now.
 
 ==============================================================================
 FILTERS						*neocomplete-filters*
@@ -1116,7 +1087,7 @@ Default sources are below. But you can create original filters(cf:
 	" Change default converter.
 	call neocomplete#custom#source('_', 'converters',
 	\ ['converter_remove_overlap', 'converter_remove_last_paren',
-        \  'converter_delimiter', 'converter_case', 'converter_abbr'])
+        \  'converter_delimiter', 'converter_abbr'])
 <
 					*neocomplete-filter-matcher_default*
 Default matchers:
@@ -1124,13 +1095,15 @@ Default matchers:
 		['matcher_head', 'matcher_length']
 	Otherwise:
 		['matcher_fuzzy', 'matcher_length']
+	
+	You can change it by |neocomplete#set_default_matchers()|.
 
 					*neocomplete-filter-sorter_default*
 Default sorters: ['sorter_rank'].
 
 					*neocomplete-filter-converter_default*
 Default converters: ['converter_remove_overlap',
-        \      'converter_delimiter', 'converter_case', 'converter_abbr'].
+        \      'converter_delimiter', 'converter_abbr'].
 
 					*neocomplete-filter-matcher_head*
 matcher_head	Head matching matcher.
@@ -1159,11 +1132,6 @@ converter_abbr
 				*neocomplete-filter-converter_disable_abbr*
 converter_disable_abbr
 		The converter which disables a candidate's abbr.
-
-					*neocomplete-filter-converter_case*
-converter_case
-		The converter which converts a candidate's word in text mode.
-		(cf: |g:neocomplete#text_mode_filetypes|)
 
 				*neocomplete-filter-converter_delimiter*
 converter_delimiter
@@ -1541,13 +1509,6 @@ should disable omni source in python or ruby.
 	let g:neocomplete#sources#omni#input_patterns.ruby = ''
 <
 
-Q: I like moving cursor by cursor-keys.  But neocomplete popups menus...
-
-A: Please set this in your .vimrc.
->
-	let g:neocomplete#enable_insert_char_pre = 1
-<
-
 Q: Where are the snippets for neocomplete?
 
 A: https://github.com/Shougo/neosnippet or
@@ -1610,6 +1571,7 @@ A: Please try below settings.
 	      \ '\[\h\w*\s\h\?\|\h\w*\%(\.\|->\)\|\h\w*::\w*'
 	let g:clang_complete_auto = 0
 	let g:clang_auto_select = 0
+	let g:clang_default_keymappings = 0
 	"let g:clang_use_library = 1
 <
 
@@ -1877,23 +1839,6 @@ A: It is autoclose mappings problem. I cannot fix it. You should use
 auto-pairs plugin instead of it.
 https://github.com/jiangmiao/auto-pairs
 
-Q: I want to move to cursor by arrow key.
-https://github.com/Shougo/neocomplete.vim/issues/114
-
-A: First, I don't recommend to move cursor by arrow key. It is not Vim's
-theory. But if you want to move cursor forcely, you can config it by following
-settings. >
-
-	" For cursor moving in insert mode(Not recommended)
-	"inoremap <expr><Left>  neocomplete#close_popup() . "\<Left>"
-	"inoremap <expr><Right> neocomplete#close_popup() . "\<Right>"
-	"inoremap <expr><Up>    neocomplete#close_popup() . "\<Up>"
-	"inoremap <expr><Down>  neocomplete#close_popup() . "\<Down>"
-	" Or set this.
-	"let g:neocomplete#enable_cursor_hold_i = 1
-	" Or set this.
-	"let g:neocomplete#enable_insert_char_pre = 1
-
 Q: I want to complete by Erlang omnifunc.
 https://github.com/vim-erlang/vim-erlang-omnicomplete
 
@@ -1917,7 +1862,7 @@ Q: In ||g:neocomplete#force_omni_input_patterns|,
 |g:neocomplete#enable_auto_select| feature is not work.
 https://github.com/Shougo/neocomplete.vim/issues/139
 
-A: It is feature. See |g:neocomplete#force_omni_input_patterns| documentation.
+A: Please update your Vim to 7.4.775 or above.
 
 Q: I want to disable all sources by default.
 
@@ -1930,14 +1875,18 @@ https://github.com/Shougo/neocomplete.vim/issues/158
 A: >
 	call neocomplete#custom#source('tags', 'converters',
 	\ ['converter_remove_overlap', 'converter_remove_last_paren',
-	\  'converter_delimiter', 'converter_case',
-	\ 'converter_disable_abbr', 'converter_abbr'])
+	\  'converter_delimiter', 'converter_disable_abbr', 'converter_abbr'])
 
 Q: <C-x><C-u> does not work.
 https://github.com/Shougo/neocomplete.vim/issues/305
 
 A: It is feature.
 You must use |neocomplete#start_manual_complete()| instead of <C-x><C-u>.
+
+Q: My <C-l> mapping never works.
+
+A: https://github.com/Shougo/neocomplete.vim/issues/334
+Note: It is fixed in Vim 7.4.653.
 
 ==============================================================================
 vim:tw=78:ts=8:ft=help:norl:noet:fen:noet:

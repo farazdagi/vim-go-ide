@@ -38,6 +38,17 @@ function! neocomplete#complete#_get_results(cur_text, ...) "{{{
 
   let complete_sources = call(
         \ 'neocomplete#complete#_set_results_pos', [a:cur_text] + a:000)
+  if empty(complete_sources)
+    call neocomplete#print_debug('Skipped.')
+    return []
+  endif
+
+  if neocomplete#is_auto_complete()
+    let complete_pos =
+          \ neocomplete#complete#_get_complete_pos(complete_sources)
+    call neocomplete#complete#_set_previous_position(a:cur_text, complete_pos)
+  endif
+
   call neocomplete#complete#_set_results_words(complete_sources)
 
   return filter(copy(complete_sources),
@@ -139,15 +150,16 @@ EOF
     endif
   endfor
 
+  call filter(candidates, 'v:val.word !=# a:complete_str')
+
   if g:neocomplete#max_list > 0
     let candidates = candidates[: g:neocomplete#max_list]
   endif
 
   " Check dup and set icase.
-  let icase = !neocomplete#is_text_mode() && !neocomplete#within_comment() &&
-        \ g:neocomplete#enable_ignore_case &&
-        \!((g:neocomplete#enable_smart_case
-        \  || g:neocomplete#enable_camel_case) && a:complete_str =~ '\u')
+  let icase = g:neocomplete#enable_ignore_case &&
+        \ !((g:neocomplete#enable_smart_case
+        \    || g:neocomplete#enable_camel_case) && a:complete_str =~ '\u')
   if icase
     for candidate in candidates
       let candidate.icase = 1
@@ -273,8 +285,11 @@ function! neocomplete#complete#_set_results_words(sources) "{{{
       let context.prev_complete_pos = context.complete_pos
 
       if !empty(context.candidates)
+        let matchers = empty(source.neocomplete__matchers) ?
+              \   neocomplete#get_current_neocomplete().default_matchers
+              \ : source.neocomplete__matchers
         let context.candidates = neocomplete#helper#call_filters(
-              \ source.neocomplete__matchers, source, {})
+              \ matchers, source, {})
       endif
 
       call neocomplete#print_debug(source.name)
@@ -282,6 +297,19 @@ function! neocomplete#complete#_set_results_words(sources) "{{{
   finally
     let &ignorecase = ignorecase_save
   endtry
+endfunction"}}}
+
+function! neocomplete#complete#_check_previous_position(cur_text, complete_pos) abort "{{{
+  let neocomplete = neocomplete#get_current_neocomplete()
+  return a:complete_pos == neocomplete.old_complete_pos
+        \ && line('.') == neocomplete.old_linenr
+        \ && a:cur_text ==# neocomplete.old_cur_text
+endfunction"}}}
+function! neocomplete#complete#_set_previous_position(cur_text, complete_pos) abort "{{{
+  let neocomplete = neocomplete#get_current_neocomplete()
+  let neocomplete.old_complete_pos = a:complete_pos
+  let neocomplete.old_linenr = line('.')
+  let neocomplete.old_cur_text = a:cur_text
 endfunction"}}}
 
 " Source rank order. "{{{

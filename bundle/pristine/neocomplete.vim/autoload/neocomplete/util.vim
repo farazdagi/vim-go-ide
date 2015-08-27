@@ -57,11 +57,11 @@ function! s:get_process() "{{{
 endfunction"}}}
 
 function! neocomplete#util#truncate_smart(...) "{{{
-  return call(s:get_prelude().truncate_skipping, a:000)
+  return call(s:get_string().truncate_skipping, a:000)
 endfunction"}}}
 
 function! neocomplete#util#truncate(...) "{{{
-  return call(s:get_prelude().truncate, a:000)
+  return call(s:get_string().truncate, a:000)
 endfunction"}}}
 
 function! neocomplete#util#strchars(...) "{{{
@@ -71,10 +71,10 @@ function! neocomplete#util#wcswidth(string) "{{{
   return strwidth(a:string)
 endfunction"}}}
 function! neocomplete#util#strwidthpart(...) "{{{
-  return call(s:get_prelude().strwidthpart, a:000)
+  return call(s:get_string().strwidthpart, a:000)
 endfunction"}}}
 function! neocomplete#util#strwidthpart_reverse(...) "{{{
-  return call(s:get_prelude().strwidthpart_reverse, a:000)
+  return call(s:get_string().strwidthpart_reverse, a:000)
 endfunction"}}}
 
 function! neocomplete#util#substitute_path_separator(...) "{{{
@@ -103,7 +103,7 @@ function! neocomplete#util#is_mac(...) "{{{
   return call(s:get_prelude().is_mac, a:000)
 endfunction"}}}
 function! neocomplete#util#is_complete_select() "{{{
-  return get(g:, 'neocomplete#enable_complete_select', 0)
+  return has('patch-7.4.775')
 endfunction"}}}
 function! neocomplete#util#get_last_status(...) "{{{
   return call(s:get_process().get_last_status, a:000)

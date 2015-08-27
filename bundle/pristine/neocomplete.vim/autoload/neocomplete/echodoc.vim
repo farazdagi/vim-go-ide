@@ -31,21 +31,22 @@ let s:doc_dict = {
       \ 'name' : 'neocomplete',
       \ 'rank' : 10,
       \ }
+" @vimlint(EVL102, 1, v:completed_item)
 function! s:doc_dict.search(cur_text) "{{{
-  let item = neocomplete#get_current_neocomplete().completed_item
-
-  if empty(item)
+  if !exists('v:completed_item') || empty(v:completed_item)
     return []
   endif
 
-  let ret = []
+  let item = v:completed_item
 
-  let abbr = (has_key(item, 'abbr') && item.word !=# item.abbr) ?
-        \ item.abbr : split(item.info, '\n')[0]
-  if has_key(item, 'abbr')
-        \ && abbr ==# item.abbr && len(get(item, 'menu', '')) > 5
+  let abbr = (item.abbr != '') ? item.abbr : item.word
+  if len(item.menu) > 5
     " Combine menu.
     let abbr .= ' ' . item.menu
+  endif
+
+  if item.info != ''
+    let abbr = split(item.info, '\n')[0]
   endif
 
   " Skip
@@ -53,16 +54,19 @@ function! s:doc_dict.search(cur_text) "{{{
     return []
   endif
 
-  let match = match(abbr, neocomplete#escape_match(item.word))
-  if match > 0
-    call add(ret, { 'text' : abbr[ : match-1] })
-  endif
+  let ret = []
 
-  call add(ret, { 'text' : item.word, 'highlight' : 'Identifier' })
-  call add(ret, { 'text' : abbr[match+len(item.word) :] })
+  let match = stridx(abbr, item.word)
+  if match < 0
+    call add(ret, { 'text' : abbr })
+  else
+    call add(ret, { 'text' : item.word, 'highlight' : 'Identifier' })
+    call add(ret, { 'text' : abbr[match+len(item.word) :] })
+  endif
 
   return ret
 endfunction"}}}
+" @vimlint(EVL102, 0, v:completed_item)
 "}}}
 
 function! neocomplete#echodoc#init() "{{{

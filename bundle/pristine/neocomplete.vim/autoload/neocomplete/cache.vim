@@ -43,7 +43,8 @@ do
   local list = {}
   for line in io.lines(vim.eval(
       'neocomplete#cache#encode_name(a:cache_dir, a:filename)')) do
-    list = loadstring('return ' .. line)()
+    list = (loadstring) and loadstring('return ' .. line)()
+                        or  load('return ' .. line)()
   end
 
   for i = 1, #list do
@@ -203,9 +204,8 @@ function! neocomplete#cache#async_load_from_file(cache_dir, filename, pattern, m
         \ ]
   return s:async_load(argv, a:cache_dir, a:filename)
 endfunction"}}}
-function! neocomplete#cache#async_load_from_tags(cache_dir, filename, filetype, pattern, mark, is_create_tags) "{{{
+function! neocomplete#cache#async_load_from_tags(cache_dir, filename, filetype, pattern, mark) "{{{
   if !neocomplete#cache#check_old_cache(a:cache_dir, a:filename)
-        \ || !neocomplete#cache#check_old_cache('tags_output', a:filename)
         \ || neocomplete#util#is_sudo()
     return neocomplete#cache#encode_name(a:cache_dir, a:filename)
   endif
@@ -213,44 +213,13 @@ function! neocomplete#cache#async_load_from_tags(cache_dir, filename, filetype, 
   let cache_name =
         \ neocomplete#cache#encode_name(a:cache_dir, a:filename)
   let pattern_file_name =
-        \ neocomplete#cache#encode_name('tags_pattens', a:filename)
+        \ neocomplete#cache#encode_name('tags_patterns', a:filename)
 
-  if a:is_create_tags
-    if !executable(g:neocomplete#ctags_command)
-      echoerr 'Create tags error! Please install '
-            \ . g:neocomplete#ctags_command . '.'
-      return neocomplete#cache#encode_name(a:cache_dir, a:filename)
-    endif
-
-    " Create tags file.
-    let tags_file_name =
-          \ neocomplete#cache#encode_name('tags_output', a:filename)
-
-    let default = get(g:neocomplete#ctags_arguments, '_', '')
-    let args = get(g:neocomplete#ctags_arguments, a:filetype, default)
-
-    if has('win32') || has('win64')
-      let filename =
-            \ neocomplete#util#substitute_path_separator(a:filename)
-      let command = printf('%s -f "%s" %s "%s" ',
-            \ g:neocomplete#ctags_command, tags_file_name, args, filename)
-    else
-      let command = printf('%s -f ''%s'' 2>/dev/null %s ''%s''',
-            \ g:neocomplete#ctags_command, tags_file_name, args, a:filename)
-    endif
-
-    if neocomplete#has_vimproc()
-      call vimproc#system_bg(command)
-    else
-      call system(command)
-    endif
-  else
-    let tags_file_name = '$dummy$'
-  endif
+  let tags_file_name = '$dummy$'
 
   let filter_pattern =
         \ get(g:neocomplete#tags_filter_patterns, a:filetype, '')
-  call neocomplete#cache#writefile('tags_pattens', a:filename,
+  call neocomplete#cache#writefile('tags_patterns', a:filename,
         \ [a:pattern, tags_file_name, filter_pattern, a:filetype])
 
   " args: funcname, outputname, filename
@@ -290,6 +259,10 @@ function! s:async_load(argv, cache_dir, filename) "{{{
   return neocomplete#cache#encode_name(a:cache_dir, a:filename)
 endfunction"}}}
 function! s:search_vim_path() "{{{
+  if exists('s:vim_path')
+    return s:vim_path
+  endif
+
   let paths = vimproc#get_command_name(v:progname, $PATH, -1)
   if empty(paths)
     if has('gui_macvim')
@@ -302,7 +275,7 @@ function! s:search_vim_path() "{{{
         return ''
       endif
 
-      let vim_path = '/Applications/MacVim.app/Contents/MacOS/Vim'
+      let s:vim_path = '/Applications/MacVim.app/Contents/MacOS/Vim'
     else
       call neocomplete#print_error(
             \ printf('Vim path : "%s" is not found.'.
@@ -315,16 +288,15 @@ function! s:search_vim_path() "{{{
     let base_path = neocomplete#util#substitute_path_separator(
           \ fnamemodify(paths[0], ':p:h'))
 
-    let vim_path = base_path .
-          \ (neocomplete#util#is_windows() ? '/vim.exe' : '/vim')
+    let s:vim_path = base_path . '/vim'
 
-    if !executable(vim_path) && neocomplete#util#is_mac()
+    if !executable(s:vim_path) && neocomplete#util#is_mac()
       " Note: Search "Vim" instead of vim.
-      let vim_path = base_path. '/Vim'
+      let s:vim_path = base_path. '/Vim'
     endif
   endif
 
-  return vim_path
+  return s:vim_path
 endfunction"}}}
 
 let &cpo = s:save_cpo
