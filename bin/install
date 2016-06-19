@@ -1,14 +1,23 @@
-cd ~/.vim_go_runtime
+#!/bin/sh
 
-echo 'set runtimepath^=~/.vim_go_runtime
-source ~/.vim_go_runtime/vimrc/basic.vim
-source ~/.vim_go_runtime/vimrc/filetypes.vim
-source ~/.vim_go_runtime/vimrc/plugins.vim
-source ~/.vim_go_runtime/vimrc/extended.vim
+INSTALL_PATH="$(dirname "$(test -L "$BASH_SOURCE" && readlink "$BASH_SOURCE" || echo "$BASH_SOURCE")")"
+
+cd "$INSTALL_PATH"
+
+cat > "$HOME/.vimrc.go" <<EOF
+set runtimepath^="$INSTALL_PATH"
+
+source "$INSTALL_PATH/vimrc/basic.vim"
+source "$INSTALL_PATH/vimrc/filetypes.vim"
+source "$INSTALL_PATH/vimrc/plugins.vim"
+source "$INSTALL_PATH/vimrc/extended.vim"
+
 try
-source ~/.vim_go_runtime/custom_config.vim
+  source "$INSTALL_PATH/custom_config.vim"
 catch
-endtry' > ~/.vimrc.go
+endtry
+EOF
 
-echo "Installed w/o any issues! Start producing your Go magic now :-)"
+echo 'Installed w/o any issues! Start producing your Go magic now :-)'
 echo "Hint: vim -u ~/.vimrc.go"
+
