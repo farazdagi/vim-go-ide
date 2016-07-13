@@ -14,7 +14,7 @@ Fork the repo, and then clone it to `~/.vim_go_runtime`. Once done, just run ins
 
 **NOTE:** You system's Vim configuration will NOT be changed i.e. it is safe to install.
 
-**REQUIREMENT:** vim-go-ide uses [pathogen](https://github.com/tpope/vim-pathogen) to manage plugins. You need to have pathogen installed on your machine (see https://github.com/farazdagi/vim-go-ide/issues/12).
+**REQUIREMENT:** vim-go-ide uses [pathogen](https://github.com/tpope/vim-pathogen) to manage plugins. You need to have pathogen installed on your machine (see #12).
 
 ### 2. Run your newly installed Vim configuration:
 
