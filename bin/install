@@ -3,10 +3,16 @@
 INSTALL_PATH="$(cd $(dirname $0)/../ ; pwd -P )"
 
 cat > "$HOME/.vimrc.go" <<EOF
-set runtimepath^="$INSTALL_PATH"
+let &rtp="$INSTALL_PATH".",".&rtp
 
 source $INSTALL_PATH/vimrc/basic.vim
 source $INSTALL_PATH/vimrc/filetypes.vim
+
+" Load pathogen paths
+call pathogen#infect('$INSTALL_PATH/bundle/forked/{}')
+call pathogen#infect('$INSTALL_PATH/bundle/pristine/{}')
+call pathogen#helptags()
+
 source $INSTALL_PATH/vimrc/plugins.vim
 source $INSTALL_PATH/vimrc/extended.vim
 
