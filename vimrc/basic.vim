@@ -35,7 +35,10 @@ nnoremap JJJJ <nop>
 "------------------------------------------------------------------------------
 
 " Make sure that coursor is always vertically centered on j/k moves
-set so=999
+" set so=999
+
+" Enable relative line numbers
+set relativenumber
 
 " add vertical lines on columns
 set colorcolumn=80,120
