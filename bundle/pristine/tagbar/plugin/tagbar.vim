@@ -4,7 +4,7 @@
 " Author:      Jan Larres <jan@majutsushi.net>
 " Licence:     Vim licence
 " Website:     http://majutsushi.github.com/tagbar/
-" Version:     2.6.1
+" Version:     2.7
 " Note:        This plugin was heavily inspired by the 'Taglist' plugin by
 "              Yegappan Lakshmanan and uses a small amount of code from it.
 "
@@ -59,6 +59,7 @@ function! s:setup_options() abort
         \ ['autofocus', 0],
         \ ['autopreview', 0],
         \ ['autoshowtag', 0],
+        \ ['case_insensitive', 0],
         \ ['compact', 0],
         \ ['expand', 0],
         \ ['foldlevel', 99],
@@ -74,6 +75,7 @@ function! s:setup_options() abort
         \ ['vertical', 0],
         \ ['width', 40],
         \ ['zoomwidth', 1],
+        \ ['silent', 0],
     \ ]
 
     for [opt, val] in options
@@ -106,14 +108,17 @@ function! s:setup_keymaps() abort
         \ ['togglefold',    ['o', 'za']],
         \ ['openallfolds',  ['*', '<kMultiply>', 'zR']],
         \ ['closeallfolds', ['=', 'zM']],
+        \ ['incrementfolds',  ['zr']],
+        \ ['decrementfolds',  ['zm']],
         \ ['nextfold',      'zj'],
         \ ['prevfold',      'zk'],
         \
-        \ ['togglesort',      's'],
-        \ ['toggleautoclose', 'c'],
-        \ ['zoomwin',         'x'],
-        \ ['close',           'q'],
-        \ ['help',            ['<F1>', '?']],
+        \ ['togglesort',            's'],
+        \ ['togglecaseinsensitive', 'i'],
+        \ ['toggleautoclose',       'c'],
+        \ ['zoomwin',               'x'],
+        \ ['close',                 'q'],
+        \ ['help',                  ['<F1>', '?']],
     \ ]
 
     for [map, key] in keymaps
@@ -138,8 +143,8 @@ command! -nargs=1 -bang TagbarSetFoldlevel  call tagbar#SetFoldLevel(<args>, <ba
 command! -nargs=0 TagbarShowTag       call tagbar#highlighttag(1, 1)
 command! -nargs=? TagbarCurrentTag    echo tagbar#currenttag('%s', 'No current tag', <f-args>)
 command! -nargs=1 TagbarGetTypeConfig call tagbar#gettypeconfig(<f-args>)
-command! -nargs=? TagbarDebug         call tagbar#StartDebug(<f-args>)
-command! -nargs=0 TagbarDebugEnd      call tagbar#StopDebug()
+command! -nargs=? TagbarDebug         call tagbar#debug#start_debug(<f-args>)
+command! -nargs=0 TagbarDebugEnd      call tagbar#debug#stop_debug()
 command! -nargs=0 TagbarTogglePause   call tagbar#toggle_pause()
 
 " Modeline {{{1

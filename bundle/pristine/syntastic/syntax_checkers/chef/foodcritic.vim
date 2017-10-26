@@ -1,6 +1,6 @@
 "============================================================================
 "File:        foodcritic.vim
-"Description: Syntax checking plugin for syntastic.vim
+"Description: Syntax checking plugin for syntastic
 "Maintainer:  Doug Ireton <dougireton@gmail.com>
 "License:     This program is free software. It comes without any warranty,
 "             to the extent permitted by applicable law. You can redistribute
@@ -30,8 +30,8 @@ function! SyntaxCheckers_chef_foodcritic_GetLocList() dict
 endfunction
 
 call g:SyntasticRegistry.CreateAndRegisterChecker({
-      \ 'filetype': 'chef',
-      \ 'name': 'foodcritic'})
+    \ 'filetype': 'chef',
+    \ 'name': 'foodcritic'})
 
 let &cpo = s:save_cpo
 unlet s:save_cpo

@@ -26,7 +26,7 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-function! neocomplete#filters#converter_delimiter#define() "{{{
+function! neocomplete#filters#converter_delimiter#define() abort "{{{
   return s:converter
 endfunction"}}}
 
@@ -36,15 +36,14 @@ let s:converter = {
       \}
 
 " @vimlint(EVL102, 1, l:delim_cnt)
-function! s:converter.filter(context) "{{{
+function! s:converter.filter(context) abort "{{{
   if g:neocomplete#max_keyword_width < 0
     return a:context.candidates
   endif
 
   " Delimiter check.
-  let filetype = neocomplete#get_context_filetype()
-
-  for delimiter in get(g:neocomplete#delimiter_patterns, filetype, [])
+  for delimiter in get(g:neocomplete#delimiter_patterns,
+        \ a:context.filetype, [])
     " Count match.
     let delim_cnt = 0
     let delimiter_vim = neocomplete#util#escape_pattern(delimiter)
@@ -60,7 +59,10 @@ function! s:converter.filter(context) "{{{
       local candidates = vim.eval('a:context.candidates')
       local pattern = vim.eval('neocomplete#filters#escape(delimiter)')..'.'
       for i = 0, #candidates-1 do
-        if string.find(candidates[i].word, pattern, 1) ~= nil then
+        if string.find(candidates[i].word, pattern, 1) ~= nil and (
+            not candidates[i].abbr or
+            string.gsub(candidates[i].word, '%([^)]*%)?', '()')
+              == string.gsub(candidates[i].abbr, '%([^)]*%)?', '()')) then
           vim.command('call s:process_delimiter(a:context, '..
             'a:context.candidates['.. i ..
             '], delimiter_vim, delim_cnt)')
@@ -74,7 +76,7 @@ EOF
 endfunction"}}}
 " @vimlint(EVL102, 0, l:delim_cnt)
 
-function! s:process_delimiter(context, candidate, delimiter, delim_cnt)
+function! s:process_delimiter(context, candidate, delimiter, delim_cnt) abort
   let candidate = a:candidate
 
   let split_list = split(candidate.word, a:delimiter.'\ze.', 1)
@@ -103,6 +105,7 @@ function! s:process_delimiter(context, candidate, delimiter, delim_cnt)
   " Clear previous result.
   let a:context.prev_candidates = []
   let a:context.prev_complete_pos = -1
+  let a:context.prev_line = ''
 endfunction
 
 let &cpo = s:save_cpo

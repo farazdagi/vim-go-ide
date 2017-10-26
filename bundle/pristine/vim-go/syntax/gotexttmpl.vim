@@ -6,7 +6,7 @@
 
 " Quit when a (custom) syntax file was already loaded
 if exists("b:current_syntax")
-    finish
+  finish
 endif
 
 syn case match
@@ -66,7 +66,7 @@ syn cluster     gotplLiteral     contains=goString,goRawString,goCharacter,@goIn
 syn keyword     gotplControl     contained   if else end range with template
 syn keyword     gotplFunctions   contained   and html index js len not or print printf println urlquery eq ne lt le gt ge
 syn match       gotplVariable    contained   /\$[a-zA-Z0-9_]*\>/
-syn match       goTplIdentifier  contained   /\.[^\s}]*\>/
+syn match       goTplIdentifier  contained   /\.[^\s}]+\>/
 
 hi def link     gotplControl        Keyword
 hi def link     gotplFunctions      Function
@@ -74,12 +74,12 @@ hi def link     goTplVariable       Special
 
 syn region gotplAction start="{{" end="}}" contains=@gotplLiteral,gotplControl,gotplFunctions,gotplVariable,goTplIdentifier display
 syn region gotplAction start="\[\[" end="\]\]" contains=@gotplLiteral,gotplControl,gotplFunctions,gotplVariable display
-syn region goTplComment start="{{/\*" end="\*/}}" display
-syn region goTplComment start="\[\[/\*" end="\*/\]\]" display
+syn region goTplComment start="{{\(- \)\?/\*" end="\*/\( -\)\?}}" display
+syn region goTplComment start="\[\[\(- \)\?/\*" end="\*/\( -\)\?\]\]" display
 
 hi def link gotplAction PreProc
 hi def link goTplComment Comment
 
 let b:current_syntax = "gotexttmpl"
 
-" vim:ts=4:sw=4:et
+" vim: sw=2 ts=2 et

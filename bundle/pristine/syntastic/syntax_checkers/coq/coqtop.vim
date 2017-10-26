@@ -1,6 +1,6 @@
 "============================================================================
 "File:        coqtop.vim
-"Description: Syntax checking plugin for syntastic.vim
+"Description: Syntax checking plugin for syntastic
 "Maintainer:  Matvey Aksenov <matvey.aksenov at gmail dot com>
 "License:     This program is free software. It comes without any warranty,
 "             to the extent permitted by applicable law. You can redistribute
@@ -22,7 +22,7 @@ function! SyntaxCheckers_coq_coqtop_GetLocList() dict
     let makeprg = self.makeprgBuild({ 'args_after': '-noglob -batch -load-vernac-source' })
 
     let errorformat =
-        \ '%AFile \"%f\"\, line %l\, characters %c\-%.%#\:,'.
+        \ '%AFile "%f"\, line %l\, characters %c-%.%#\:,'.
         \ '%C%m'
 
     return SyntasticMake({

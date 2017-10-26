@@ -84,7 +84,7 @@ set whichwrap+=<,>,h,l
 
 " In many terminal emulators the mouse works just fine, thus enable it.
 if has('mouse')
-  set mouse=a
+  set mouse="a"
 endif
 
 " Allow smarter completion by infering the case
@@ -252,7 +252,7 @@ map <C-h> <C-W>h
 map <C-l> <C-W>l
 
 " Close the current buffer (w/o closing the current window)
-map <leader>bd :Bclose<cr>
+" map <leader>bd :Bclose<cr>
 
 " Close all the buffers
 map <leader>bda :1,1000 bd!<cr>

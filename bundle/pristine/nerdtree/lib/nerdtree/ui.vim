@@ -20,108 +20,105 @@ endfunction
 "FUNCTION: s:UI._dumpHelp  {{{1
 "prints out the quick help
 function! s:UI._dumpHelp()
-    let old_h = @h
-    if b:treeShowHelp ==# 1
-        let @h=   "\" NERD tree (" . nerdtree#version() . ") quickhelp~\n"
-        let @h=@h."\" ============================\n"
-        let @h=@h."\" File node mappings~\n"
-        let @h=@h."\" ". (g:NERDTreeMouseMode ==# 3 ? "single" : "double") ."-click,\n"
-        let @h=@h."\" <CR>,\n"
-        if b:NERDTreeType ==# "primary"
-            let @h=@h."\" ". g:NERDTreeMapActivateNode .": open in prev window\n"
+    if self.getShowHelp()
+        let help  = "\" NERDTree (" . nerdtree#version() . ") quickhelp~\n"
+        let help .= "\" ============================\n"
+        let help .= "\" File node mappings~\n"
+        let help .= "\" ". (g:NERDTreeMouseMode ==# 3 ? "single" : "double") ."-click,\n"
+        let help .= "\" <CR>,\n"
+        if self.nerdtree.isTabTree()
+            let help .= "\" ". g:NERDTreeMapActivateNode .": open in prev window\n"
         else
-            let @h=@h."\" ". g:NERDTreeMapActivateNode .": open in current window\n"
+            let help .= "\" ". g:NERDTreeMapActivateNode .": open in current window\n"
         endif
-        if b:NERDTreeType ==# "primary"
-            let @h=@h."\" ". g:NERDTreeMapPreview .": preview\n"
+        if self.nerdtree.isTabTree()
+            let help .= "\" ". g:NERDTreeMapPreview .": preview\n"
         endif
-        let @h=@h."\" ". g:NERDTreeMapOpenInTab.": open in new tab\n"
-        let @h=@h."\" ". g:NERDTreeMapOpenInTabSilent .": open in new tab silently\n"
-        let @h=@h."\" middle-click,\n"
-        let @h=@h."\" ". g:NERDTreeMapOpenSplit .": open split\n"
-        let @h=@h."\" ". g:NERDTreeMapPreviewSplit .": preview split\n"
-        let @h=@h."\" ". g:NERDTreeMapOpenVSplit .": open vsplit\n"
-        let @h=@h."\" ". g:NERDTreeMapPreviewVSplit .": preview vsplit\n"
+        let help .= "\" ". g:NERDTreeMapOpenInTab.": open in new tab\n"
+        let help .= "\" ". g:NERDTreeMapOpenInTabSilent .": open in new tab silently\n"
+        let help .= "\" middle-click,\n"
+        let help .= "\" ". g:NERDTreeMapOpenSplit .": open split\n"
+        let help .= "\" ". g:NERDTreeMapPreviewSplit .": preview split\n"
+        let help .= "\" ". g:NERDTreeMapOpenVSplit .": open vsplit\n"
+        let help .= "\" ". g:NERDTreeMapPreviewVSplit .": preview vsplit\n"
 
-        let @h=@h."\"\n\" ----------------------------\n"
-        let @h=@h."\" Directory node mappings~\n"
-        let @h=@h."\" ". (g:NERDTreeMouseMode ==# 1 ? "double" : "single") ."-click,\n"
-        let @h=@h."\" ". g:NERDTreeMapActivateNode .": open & close node\n"
-        let @h=@h."\" ". g:NERDTreeMapOpenRecursively .": recursively open node\n"
-        let @h=@h."\" ". g:NERDTreeMapCloseDir .": close parent of node\n"
-        let @h=@h."\" ". g:NERDTreeMapCloseChildren .": close all child nodes of\n"
-        let @h=@h."\"    current node recursively\n"
-        let @h=@h."\" middle-click,\n"
-        let @h=@h."\" ". g:NERDTreeMapOpenExpl.": explore selected dir\n"
+        let help .= "\"\n\" ----------------------------\n"
+        let help .= "\" Directory node mappings~\n"
+        let help .= "\" ". (g:NERDTreeMouseMode ==# 1 ? "double" : "single") ."-click,\n"
+        let help .= "\" ". g:NERDTreeMapActivateNode .": open & close node\n"
+        let help .= "\" ". g:NERDTreeMapOpenRecursively .": recursively open node\n"
+        let help .= "\" ". g:NERDTreeMapCloseDir .": close parent of node\n"
+        let help .= "\" ". g:NERDTreeMapCloseChildren .": close all child nodes of\n"
+        let help .= "\"    current node recursively\n"
+        let help .= "\" middle-click,\n"
+        let help .= "\" ". g:NERDTreeMapOpenExpl.": explore selected dir\n"
 
-        let @h=@h."\"\n\" ----------------------------\n"
-        let @h=@h."\" Bookmark table mappings~\n"
-        let @h=@h."\" double-click,\n"
-        let @h=@h."\" ". g:NERDTreeMapActivateNode .": open bookmark\n"
-        let @h=@h."\" ". g:NERDTreeMapOpenInTab.": open in new tab\n"
-        let @h=@h."\" ". g:NERDTreeMapOpenInTabSilent .": open in new tab silently\n"
-        let @h=@h."\" ". g:NERDTreeMapDeleteBookmark .": delete bookmark\n"
+        let help .= "\"\n\" ----------------------------\n"
+        let help .= "\" Bookmark table mappings~\n"
+        let help .= "\" double-click,\n"
+        let help .= "\" ". g:NERDTreeMapActivateNode .": open bookmark\n"
+        let help .= "\" ". g:NERDTreeMapOpenInTab.": open in new tab\n"
+        let help .= "\" ". g:NERDTreeMapOpenInTabSilent .": open in new tab silently\n"
+        let help .= "\" ". g:NERDTreeMapDeleteBookmark .": delete bookmark\n"
 
-        let @h=@h."\"\n\" ----------------------------\n"
-        let @h=@h."\" Tree navigation mappings~\n"
-        let @h=@h."\" ". g:NERDTreeMapJumpRoot .": go to root\n"
-        let @h=@h."\" ". g:NERDTreeMapJumpParent .": go to parent\n"
-        let @h=@h."\" ". g:NERDTreeMapJumpFirstChild  .": go to first child\n"
-        let @h=@h."\" ". g:NERDTreeMapJumpLastChild   .": go to last child\n"
-        let @h=@h."\" ". g:NERDTreeMapJumpNextSibling .": go to next sibling\n"
-        let @h=@h."\" ". g:NERDTreeMapJumpPrevSibling .": go to prev sibling\n"
+        let help .= "\"\n\" ----------------------------\n"
+        let help .= "\" Tree navigation mappings~\n"
+        let help .= "\" ". g:NERDTreeMapJumpRoot .": go to root\n"
+        let help .= "\" ". g:NERDTreeMapJumpParent .": go to parent\n"
+        let help .= "\" ". g:NERDTreeMapJumpFirstChild  .": go to first child\n"
+        let help .= "\" ". g:NERDTreeMapJumpLastChild   .": go to last child\n"
+        let help .= "\" ". g:NERDTreeMapJumpNextSibling .": go to next sibling\n"
+        let help .= "\" ". g:NERDTreeMapJumpPrevSibling .": go to prev sibling\n"
 
-        let @h=@h."\"\n\" ----------------------------\n"
-        let @h=@h."\" Filesystem mappings~\n"
-        let @h=@h."\" ". g:NERDTreeMapChangeRoot .": change tree root to the\n"
-        let @h=@h."\"    selected dir\n"
-        let @h=@h."\" ". g:NERDTreeMapUpdir .": move tree root up a dir\n"
-        let @h=@h."\" ". g:NERDTreeMapUpdirKeepOpen .": move tree root up a dir\n"
-        let @h=@h."\"    but leave old root open\n"
-        let @h=@h."\" ". g:NERDTreeMapRefresh .": refresh cursor dir\n"
-        let @h=@h."\" ". g:NERDTreeMapRefreshRoot .": refresh current root\n"
-        let @h=@h."\" ". g:NERDTreeMapMenu .": Show menu\n"
-        let @h=@h."\" ". g:NERDTreeMapChdir .":change the CWD to the\n"
-        let @h=@h."\"    selected dir\n"
-        let @h=@h."\" ". g:NERDTreeMapCWD .":change tree root to CWD\n"
+        let help .= "\"\n\" ----------------------------\n"
+        let help .= "\" Filesystem mappings~\n"
+        let help .= "\" ". g:NERDTreeMapChangeRoot .": change tree root to the\n"
+        let help .= "\"    selected dir\n"
+        let help .= "\" ". g:NERDTreeMapUpdir .": move tree root up a dir\n"
+        let help .= "\" ". g:NERDTreeMapUpdirKeepOpen .": move tree root up a dir\n"
+        let help .= "\"    but leave old root open\n"
+        let help .= "\" ". g:NERDTreeMapRefresh .": refresh cursor dir\n"
+        let help .= "\" ". g:NERDTreeMapRefreshRoot .": refresh current root\n"
+        let help .= "\" ". g:NERDTreeMapMenu .": Show menu\n"
+        let help .= "\" ". g:NERDTreeMapChdir .":change the CWD to the\n"
+        let help .= "\"    selected dir\n"
+        let help .= "\" ". g:NERDTreeMapCWD .":change tree root to CWD\n"
 
-        let @h=@h."\"\n\" ----------------------------\n"
-        let @h=@h."\" Tree filtering mappings~\n"
-        let @h=@h."\" ". g:NERDTreeMapToggleHidden .": hidden files (" . (b:NERDTreeShowHidden ? "on" : "off") . ")\n"
-        let @h=@h."\" ". g:NERDTreeMapToggleFilters .": file filters (" . (b:NERDTreeIgnoreEnabled ? "on" : "off") . ")\n"
-        let @h=@h."\" ". g:NERDTreeMapToggleFiles .": files (" . (b:NERDTreeShowFiles ? "on" : "off") . ")\n"
-        let @h=@h."\" ". g:NERDTreeMapToggleBookmarks .": bookmarks (" . (b:NERDTreeShowBookmarks ? "on" : "off") . ")\n"
+        let help .= "\"\n\" ----------------------------\n"
+        let help .= "\" Tree filtering mappings~\n"
+        let help .= "\" ". g:NERDTreeMapToggleHidden .": hidden files (" . (self.getShowHidden() ? "on" : "off") . ")\n"
+        let help .= "\" ". g:NERDTreeMapToggleFilters .": file filters (" . (self.isIgnoreFilterEnabled() ? "on" : "off") . ")\n"
+        let help .= "\" ". g:NERDTreeMapToggleFiles .": files (" . (self.getShowFiles() ? "on" : "off") . ")\n"
+        let help .= "\" ". g:NERDTreeMapToggleBookmarks .": bookmarks (" . (self.getShowBookmarks() ? "on" : "off") . ")\n"
 
         "add quickhelp entries for each custom key map
-        let @h=@h."\"\n\" ----------------------------\n"
-        let @h=@h."\" Custom mappings~\n"
+        let help .= "\"\n\" ----------------------------\n"
+        let help .= "\" Custom mappings~\n"
         for i in g:NERDTreeKeyMap.All()
             if !empty(i.quickhelpText)
-                let @h=@h."\" ". i.key .": ". i.quickhelpText ."\n"
+                let help .= "\" ". i.key .": ". i.quickhelpText ."\n"
             endif
         endfor
 
-        let @h=@h."\"\n\" ----------------------------\n"
-        let @h=@h."\" Other mappings~\n"
-        let @h=@h."\" ". g:NERDTreeMapQuit .": Close the NERDTree window\n"
-        let @h=@h."\" ". g:NERDTreeMapToggleZoom .": Zoom (maximize-minimize)\n"
-        let @h=@h."\"    the NERDTree window\n"
-        let @h=@h."\" ". g:NERDTreeMapHelp .": toggle help\n"
-        let @h=@h."\"\n\" ----------------------------\n"
-        let @h=@h."\" Bookmark commands~\n"
-        let @h=@h."\" :Bookmark [<name>]\n"
-        let @h=@h."\" :BookmarkToRoot <name>\n"
-        let @h=@h."\" :RevealBookmark <name>\n"
-        let @h=@h."\" :OpenBookmark <name>\n"
-        let @h=@h."\" :ClearBookmarks [<names>]\n"
-        let @h=@h."\" :ClearAllBookmarks\n"
-        silent! put h
-    elseif g:NERDTreeMinimalUI == 0
-        let @h="\" Press ". g:NERDTreeMapHelp ." for help\n"
-        silent! put h
+        let help .= "\"\n\" ----------------------------\n"
+        let help .= "\" Other mappings~\n"
+        let help .= "\" ". g:NERDTreeMapQuit .": Close the NERDTree window\n"
+        let help .= "\" ". g:NERDTreeMapToggleZoom .": Zoom (maximize-minimize)\n"
+        let help .= "\"    the NERDTree window\n"
+        let help .= "\" ". g:NERDTreeMapHelp .": toggle help\n"
+        let help .= "\"\n\" ----------------------------\n"
+        let help .= "\" Bookmark commands~\n"
+        let help .= "\" :Bookmark [<name>]\n"
+        let help .= "\" :BookmarkToRoot <name>\n"
+        let help .= "\" :RevealBookmark <name>\n"
+        let help .= "\" :OpenBookmark <name>\n"
+        let help .= "\" :ClearBookmarks [<names>]\n"
+        let help .= "\" :ClearAllBookmarks\n"
+        silent! put =help
+    elseif !self.isMinimal()
+        let help ="\" Press ". g:NERDTreeMapHelp ." for help\n"
+        silent! put =help
     endif
-
-    let @h = old_h
 endfunction
 
 
@@ -129,6 +126,12 @@ endfunction
 function! s:UI.New(nerdtree)
     let newObj = copy(self)
     let newObj.nerdtree = a:nerdtree
+    let newObj._showHelp = 0
+    let newObj._ignoreEnabled = 1
+    let newObj._showFiles = g:NERDTreeShowFiles
+    let newObj._showHidden = g:NERDTreeShowHidden
+    let newObj._showBookmarks = g:NERDTreeShowBookmarks
+
     return newObj
 endfunction
 
@@ -149,18 +152,11 @@ function! s:UI.getPath(ln)
 
     "check to see if we have the root node
     if a:ln == rootLine
-        return b:NERDTreeRoot.path
-    endif
-
-    if !g:NERDTreeDirArrows
-        " in case called from outside the tree
-        if line !~# '^ *[|`▸▾ ]' || line =~# '^$'
-            return {}
-        endif
+        return self.nerdtree.root.path
     endif
 
     if line ==# s:UI.UpDirLine()
-        return b:NERDTreeRoot.path.getParent()
+        return self.nerdtree.root.path.getParent()
     endif
 
     let indent = self._indentLevelFor(line)
@@ -183,7 +179,7 @@ function! s:UI.getPath(ln)
 
         "have we reached the top of the tree?
         if lnum == rootLine
-            let dir = b:NERDTreeRoot.path.str({'format': 'UI'}) . dir
+            let dir = self.nerdtree.root.path.str({'format': 'UI'}) . dir
             break
         endif
         if curLineStripped =~# '/$'
@@ -196,7 +192,7 @@ function! s:UI.getPath(ln)
             endif
         endif
     endwhile
-    let curFile = b:NERDTreeRoot.path.drive . dir . curFile
+    let curFile = self.nerdtree.root.path.drive . dir . curFile
     let toReturn = g:NERDTreePath.New(curFile)
     return toReturn
 endfunction
@@ -206,19 +202,19 @@ endfunction
 function! s:UI.getLineNum(file_node)
     "if the node is the root then return the root line no.
     if a:file_node.isRoot()
-        return b:NERDTree.ui.getRootLineNum()
+        return self.getRootLineNum()
     endif
 
     let totalLines = line("$")
 
     "the path components we have matched so far
-    let pathcomponents = [substitute(b:NERDTreeRoot.path.str({'format': 'UI'}), '/ *$', '', '')]
+    let pathcomponents = [substitute(self.nerdtree.root.path.str({'format': 'UI'}), '/ *$', '', '')]
     "the index of the component we are searching for
     let curPathComponent = 1
 
     let fullpath = a:file_node.path.str({'format': 'UI'})
 
-    let lnum = b:NERDTree.ui.getRootLineNum()
+    let lnum = self.getRootLineNum()
     while lnum > 0
         let lnum = lnum + 1
         "have we reached the bottom of the tree?
@@ -259,15 +255,34 @@ function! s:UI.getRootLineNum()
     return rootLine
 endfunction
 
+"FUNCTION: s:UI.getShowBookmarks() {{{1
+function! s:UI.getShowBookmarks()
+    return self._showBookmarks
+endfunction
+
+"FUNCTION: s:UI.getShowFiles() {{{1
+function! s:UI.getShowFiles()
+    return self._showFiles
+endfunction
+
+"FUNCTION: s:UI.getShowHelp() {{{1
+function! s:UI.getShowHelp()
+    return self._showHelp
+endfunction
+
+"FUNCTION: s:UI.getShowHidden() {{{1
+function! s:UI.getShowHidden()
+    return self._showHidden
+endfunction
+
 "FUNCTION: s:UI._indentLevelFor(line) {{{1
 function! s:UI._indentLevelFor(line)
-    let level = match(a:line, '[^ \-+~▸▾`|]') / s:UI.IndentWid()
-    " check if line includes arrows
-    if match(a:line, '[▸▾]') > -1
-        " decrement level as arrow uses 3 ascii chars
-        let level = level - 1
-    endif
-    return level
+    "have to do this work around because match() returns bytes, not chars
+    let numLeadBytes = match(a:line, '\M\[^ '.g:NERDTreeDirArrowExpandable.g:NERDTreeDirArrowCollapsible.']')
+    " The next line is a backward-compatible workaround for strchars(a:line(0:numLeadBytes-1]). strchars() is in 7.3+
+    let leadChars = len(split(a:line[0:numLeadBytes-1], '\zs'))
+
+    return leadChars / s:UI.IndentWid()
 endfunction
 
 "FUNCTION: s:UI.IndentWid() {{{1
@@ -275,21 +290,31 @@ function! s:UI.IndentWid()
     return 2
 endfunction
 
+"FUNCTION: s:UI.isIgnoreFilterEnabled() {{{1
+function! s:UI.isIgnoreFilterEnabled()
+    return self._ignoreEnabled == 1
+endfunction
+
+"FUNCTION: s:UI.isMinimal() {{{1
+function! s:UI.isMinimal()
+    return g:NERDTreeMinimalUI
+endfunction
+
 "FUNCTION: s:UI.MarkupReg() {{{1
 function! s:UI.MarkupReg()
-    if g:NERDTreeDirArrows
-        return '^\([▾▸] \| \+[▾▸] \| \+\)'
-    endif
-
-    return '^[ `|]*[\-+~]'
+    return '^\(['.g:NERDTreeDirArrowExpandable.g:NERDTreeDirArrowCollapsible.'] \| \+['.g:NERDTreeDirArrowExpandable.g:NERDTreeDirArrowCollapsible.'] \| \+\)'
 endfunction
 
 "FUNCTION: s:UI._renderBookmarks {{{1
 function! s:UI._renderBookmarks()
 
-    if g:NERDTreeMinimalUI == 0
+    if !self.isMinimal()
         call setline(line(".")+1, ">----------Bookmarks----------")
         call cursor(line(".")+1, col("."))
+    endif
+
+    if g:NERDTreeBookmarksSort == 1 || g:NERDTreeBookmarksSort == 2
+        call g:NERDTreeBookmark.SortBookmarksList()
     endif
 
     for i in g:NERDTreeBookmark.Bookmarks()
@@ -334,6 +359,11 @@ function! s:UI.saveScreenState()
     call nerdtree#exec(win . "wincmd w")
 endfunction
 
+"FUNCTION: s:UI.setShowHidden(val) {{{1
+function! s:UI.setShowHidden(val)
+    let self._showHidden = a:val
+endfunction
+
 "FUNCTION: s:UI._stripMarkup(line, removeLeadingSpaces){{{1
 "returns the given line with all the tree parts stripped off
 "
@@ -347,7 +377,7 @@ function! s:UI._stripMarkup(line, removeLeadingSpaces)
     let line = substitute (line, g:NERDTreeUI.MarkupReg(),"","")
 
     "strip off any read only flag
-    let line = substitute (line, ' \[RO\]', "","")
+    let line = substitute (line, ' \['.g:NERDTreeGlyphReadOnly.'\]', "","")
 
     "strip off any bookmark flags
     let line = substitute (line, ' {[^}]*}', "","")
@@ -390,31 +420,28 @@ function! s:UI.render()
     call self._dumpHelp()
 
     "delete the blank line before the help and add one after it
-    if g:NERDTreeMinimalUI == 0
+    if !self.isMinimal()
         call setline(line(".")+1, "")
         call cursor(line(".")+1, col("."))
     endif
 
-    if b:NERDTreeShowBookmarks
+    if self.getShowBookmarks()
         call self._renderBookmarks()
     endif
 
     "add the 'up a dir' line
-    if !g:NERDTreeMinimalUI
+    if !self.isMinimal()
         call setline(line(".")+1, s:UI.UpDirLine())
         call cursor(line(".")+1, col("."))
     endif
 
     "draw the header line
-    let header = b:NERDTreeRoot.path.str({'format': 'UI', 'truncateTo': winwidth(0)})
+    let header = self.nerdtree.root.path.str({'format': 'UI', 'truncateTo': winwidth(0)})
     call setline(line(".")+1, header)
     call cursor(line(".")+1, col("."))
 
     "draw the tree
-    let old_o = @o
-    let @o = b:NERDTreeRoot.renderToString()
-    silent put o
-    let @o = old_o
+    silent put =self.nerdtree.root.renderToString()
 
     "delete the blank line at the top of the buffer
     silent 1,1delete _
@@ -443,47 +470,52 @@ function! s:UI.renderViewSavingPosition()
         let currentNode = currentNode.parent
     endwhile
 
-    call b:NERDTree.render()
+    call self.render()
 
     if currentNode != {}
         call currentNode.putCursorHere(0, 0)
     endif
 endfunction
 
+"FUNCTION: s:UI.toggleHelp() {{{1
+function! s:UI.toggleHelp()
+    let self._showHelp = !self._showHelp
+endfunction
+
 " FUNCTION: s:UI.toggleIgnoreFilter() {{{1
 " toggles the use of the NERDTreeIgnore option
 function! s:UI.toggleIgnoreFilter()
-    let b:NERDTreeIgnoreEnabled = !b:NERDTreeIgnoreEnabled
-    call b:NERDTree.ui.renderViewSavingPosition()
-    call b:NERDTree.ui.centerView()
+    let self._ignoreEnabled = !self._ignoreEnabled
+    call self.renderViewSavingPosition()
+    call self.centerView()
 endfunction
 
 " FUNCTION: s:UI.toggleShowBookmarks() {{{1
 " toggles the display of bookmarks
 function! s:UI.toggleShowBookmarks()
-    let b:NERDTreeShowBookmarks = !b:NERDTreeShowBookmarks
-    if b:NERDTreeShowBookmarks
-        call b:NERDTree.render()
+    let self._showBookmarks = !self._showBookmarks
+    if self.getShowBookmarks()
+        call self.nerdtree.render()
         call g:NERDTree.CursorToBookmarkTable()
     else
-        call b:NERDTree.ui.renderViewSavingPosition()
+        call self.renderViewSavingPosition()
     endif
-    call b:NERDTree.ui.centerView()
+    call self.centerView()
 endfunction
 
 " FUNCTION: s:UI.toggleShowFiles() {{{1
 " toggles the display of hidden files
 function! s:UI.toggleShowFiles()
-    let b:NERDTreeShowFiles = !b:NERDTreeShowFiles
-    call b:NERDTree.ui.renderViewSavingPosition()
-    call b:NERDTree.ui.centerView()
+    let self._showFiles = !self._showFiles
+    call self.renderViewSavingPosition()
+    call self.centerView()
 endfunction
 
 " FUNCTION: s:UI.toggleShowHidden() {{{1
 " toggles the display of hidden files
 function! s:UI.toggleShowHidden()
-    let b:NERDTreeShowHidden = !b:NERDTreeShowHidden
-    call b:NERDTree.ui.renderViewSavingPosition()
+    let self._showHidden = !self._showHidden
+    call self.renderViewSavingPosition()
     call self.centerView()
 endfunction
 

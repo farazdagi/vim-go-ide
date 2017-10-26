@@ -1,6 +1,6 @@
 "============================================================================
 "File:        oclint.vim
-"Description: Syntax checking plugin for syntastic.vim
+"Description: Syntax checking plugin for syntastic
 "Maintainer:  "UnCO" Lin <undercooled aT lavabit com>
 "License:     This program is free software. It comes without any warranty,
 "             to the extent permitted by applicable law. You can redistribute
@@ -13,8 +13,6 @@ if exists('g:loaded_syntastic_objcpp_oclint_checker')
     finish
 endif
 let g:loaded_syntastic_objcpp_oclint_checker = 1
-
-runtime! syntax_checkers/c/*.vim
 
 call g:SyntasticRegistry.CreateAndRegisterChecker({
     \ 'filetype': 'objcpp',

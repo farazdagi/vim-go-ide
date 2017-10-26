@@ -1,6 +1,6 @@
 "============================================================================
 "File:        coffeelint.vim
-"Description: Syntax checking plugin for syntastic.vim
+"Description: Syntax checking plugin for syntastic
 "Maintainer:  Lincoln Stoll <l@lds.li>
 "License:     This program is free software. It comes without any warranty,
 "             to the extent permitted by applicable law. You can redistribute
@@ -24,17 +24,14 @@ function! SyntaxCheckers_coffee_coffeelint_GetLocList() dict
     endif
     let makeprg = self.makeprgBuild({ 'args_after': (s:coffeelint_new ? '--reporter csv' : '--csv') })
 
-    let errorformat =
-        \ '%f\,%l\,%\d%#\,%trror\,%m,' .
-        \ '%f\,%l\,%trror\,%m,' .
-        \ '%f\,%l\,%\d%#\,%tarn\,%m,' .
-        \ '%f\,%l\,%tarn\,%m'
+    let errorformat = '%f:%l:%t:%m'
 
     return SyntasticMake({
         \ 'makeprg': makeprg,
         \ 'errorformat': errorformat,
         \ 'subtype': 'Style',
-        \ 'returns': [0, 1] })
+        \ 'returns': [0, 1],
+        \ 'preprocess': 'coffeelint' })
 endfunction
 
 call g:SyntasticRegistry.CreateAndRegisterChecker({

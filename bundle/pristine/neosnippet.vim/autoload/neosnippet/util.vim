@@ -1,116 +1,102 @@
 "=============================================================================
 " FILE: util.vim
-" AUTHOR: Shougo Matsushita <Shougo.Matsu@gmail.com>
-" License: MIT license  {{{
-"     Permission is hereby granted, free of charge, to any person obtaining
-"     a copy of this software and associated documentation files (the
-"     "Software"), to deal in the Software without restriction, including
-"     without limitation the rights to use, copy, modify, merge, publish,
-"     distribute, sublicense, and/or sell copies of the Software, and to
-"     permit persons to whom the Software is furnished to do so, subject to
-"     the following conditions:
-"
-"     The above copyright notice and this permission notice shall be included
-"     in all copies or substantial portions of the Software.
-"
-"     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-"     OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-"     MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-"     IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-"     CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-"     TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-"     SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-" }}}
+" AUTHOR: Shougo Matsushita <Shougo.Matsu at gmail.com>
+" License: MIT license
 "=============================================================================
 
-let s:save_cpo = &cpo
-set cpo&vim
-
-let s:V = vital#of('neosnippet')
-function! neosnippet#util#get_vital() "{{{
+function! neosnippet#util#get_vital() abort
+  if !exists('s:V')
+    let s:V = vital#neosnippet#new()
+  endif
   return s:V
-endfunction"}}}
-function! s:get_prelude() "{{{
+endfunction
+function! s:get_prelude() abort
   if !exists('s:Prelude')
     let s:Prelude = neosnippet#util#get_vital().import('Prelude')
   endif
   return s:Prelude
-endfunction"}}}
-function! s:get_list() "{{{
+endfunction
+function! s:get_list() abort
   if !exists('s:List')
     let s:List = neosnippet#util#get_vital().import('Data.List')
   endif
   return s:List
-endfunction"}}}
-function! s:get_string() "{{{
+endfunction
+function! s:get_string() abort
   if !exists('s:String')
     let s:String = neosnippet#util#get_vital().import('Data.String')
   endif
   return s:String
-endfunction"}}}
-function! s:get_process() "{{{
+endfunction
+function! s:get_process() abort
   if !exists('s:Process')
     let s:Process = neosnippet#util#get_vital().import('Process')
   endif
   return s:Process
-endfunction"}}}
+endfunction
 
-function! neosnippet#util#substitute_path_separator(...) "{{{
+function! neosnippet#util#substitute_path_separator(...) abort
   return call(s:get_prelude().substitute_path_separator, a:000)
-endfunction"}}}
-function! neosnippet#util#system(...) "{{{
+endfunction
+function! neosnippet#util#system(...) abort
   return call(s:get_process().system, a:000)
-endfunction"}}}
-function! neosnippet#util#has_vimproc(...) "{{{
+endfunction
+function! neosnippet#util#has_vimproc(...) abort
   return call(s:get_process().has_vimproc, a:000)
-endfunction"}}}
-function! neosnippet#util#is_windows(...) "{{{
+endfunction
+function! neosnippet#util#is_windows(...) abort
   return call(s:get_prelude().is_windows, a:000)
-endfunction"}}}
-function! neosnippet#util#is_mac(...) "{{{
+endfunction
+function! neosnippet#util#is_mac(...) abort
   return call(s:get_prelude().is_mac, a:000)
-endfunction"}}}
-function! neosnippet#util#get_last_status(...) "{{{
+endfunction
+function! neosnippet#util#get_last_status(...) abort
   return call(s:get_process().get_last_status, a:000)
-endfunction"}}}
-function! neosnippet#util#escape_pattern(...) "{{{
-  return call(s:get_prelude().escape_pattern, a:000)
-endfunction"}}}
-function! neosnippet#util#iconv(...) "{{{
+endfunction
+function! neosnippet#util#escape_pattern(...) abort
+  return call(s:get_string().escape_pattern, a:000)
+endfunction
+function! neosnippet#util#iconv(...) abort
   return call(s:get_process().iconv, a:000)
-endfunction"}}}
-function! neosnippet#util#truncate(...) "{{{
+endfunction
+function! neosnippet#util#truncate(...) abort
   return call(s:get_string().truncate, a:000)
-endfunction"}}}
-function! neosnippet#util#strwidthpart(...) "{{{
+endfunction
+function! neosnippet#util#strwidthpart(...) abort
   return call(s:get_string().strwidthpart, a:000)
-endfunction"}}}
+endfunction
 
-function! neosnippet#util#expand(path) "{{{
+function! neosnippet#util#expand(path) abort
   return neosnippet#util#substitute_path_separator(
         \ expand(escape(a:path, '*?[]"={}'), 1))
-endfunction"}}}
-function! neosnippet#util#set_default(var, val, ...)  "{{{
-  if !exists(a:var)
+endfunction
+function! neosnippet#util#set_default(var, val, ...) abort 
+  let old_var = get(a:000, 0, '')
+  if exists(old_var)
+    let {a:var} = {old_var}
+  elseif !exists(a:var)
     let {a:var} = a:val
   endif
-endfunction"}}}
-function! neosnippet#util#set_dictionary_helper(...) "{{{
+endfunction
+function! neosnippet#util#set_dictionary_helper(...) abort
   return call(s:get_prelude().set_dictionary_helper, a:000)
-endfunction"}}}
+endfunction
 
-function! neosnippet#util#get_cur_text() "{{{
+function! neosnippet#util#get_cur_text() abort
   return
         \ (mode() ==# 'i' ? (col('.')-1) : col('.')) >= len(getline('.')) ?
         \      getline('.') :
         \      matchstr(getline('.'),
         \         '^.*\%' . col('.') . 'c' . (mode() ==# 'i' ? '' : '.'))
-endfunction"}}}
-function! neosnippet#util#print_error(string) "{{{
+endfunction
+function! neosnippet#util#get_next_text() abort
+  return getline('.')[len(neosnippet#util#get_cur_text()) :]
+endfunction
+function! neosnippet#util#print_error(string) abort
   echohl Error | echomsg '[neosnippet] ' . a:string | echohl None
-endfunction"}}}
+endfunction
 
-function! neosnippet#util#parse_options(args, options_list) "{{{
+function! neosnippet#util#parse_options(args, options_list) abort
   let args = []
   let options = {}
   for arg in split(a:args, '\%(\\\@<!\s\)\+')
@@ -131,20 +117,47 @@ function! neosnippet#util#parse_options(args, options_list) "{{{
   endfor
 
   return [args, options]
-endfunction"}}}
+endfunction
+function! neosnippet#util#get_buffer_config(
+      \ filetype, buffer_var, user_var, default_var, ...) abort
+  let default_val = get(a:000, 0, '')
+
+  if exists(a:buffer_var)
+    return {a:buffer_var}
+  endif
+
+  let filetype = !has_key({a:user_var}, a:filetype)
+        \ && !has_key(eval(a:default_var), a:filetype) ? '_' : a:filetype
+
+  return get({a:user_var}, filetype,
+        \   get(eval(a:default_var), filetype, default_val))
+endfunction
 
 " Sudo check.
-function! neosnippet#util#is_sudo() "{{{
+function! neosnippet#util#is_sudo() abort
   return $SUDO_USER != '' && $USER !=# $SUDO_USER
       \ && $HOME !=# expand('~'.$USER)
       \ && $HOME ==# expand('~'.$SUDO_USER)
-endfunction"}}}
+endfunction
 
-function! neosnippet#util#option2list(str) "{{{
+function! neosnippet#util#option2list(str) abort
   return type(a:str) == type('') ? split(a:str, '\s*,\s*') : a:str
-endfunction"}}}
+endfunction
 
-let &cpo = s:save_cpo
-unlet s:save_cpo
-
-" vim: foldmethod=marker
+function! neosnippet#util#uniq(list) abort
+  let list = copy(a:list)
+  let i = 0
+  let seen = {}
+  while i < len(list)
+    let key = list[i]
+    if key !=# '' && has_key(seen, key)
+      call remove(list, i)
+    else
+      if key !=# ''
+        let seen[key] = 1
+      endif
+      let i += 1
+    endif
+  endwhile
+  return list
+endfunction

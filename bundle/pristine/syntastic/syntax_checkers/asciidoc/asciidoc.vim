@@ -1,6 +1,6 @@
 "============================================================================
 "File:        asciidoc.vim
-"Description: Syntax checking plugin for syntastic.vim
+"Description: Syntax checking plugin for syntastic
 "Maintainer:  LCD 47 <lcd047 at gmail dot com>
 "License:     This program is free software. It comes without any warranty,
 "             to the extent permitted by applicable law. You can redistribute
@@ -22,14 +22,14 @@ function! SyntaxCheckers_asciidoc_asciidoc_GetLocList() dict
     let makeprg = self.makeprgBuild({ 'args_after': syntastic#c#NullOutput() })
 
     let errorformat =
-        \ '%Easciidoc: %tRROR: %f: line %l: %m,' .
-        \ '%Easciidoc: %tRROR: %f: %m,' .
-        \ '%Easciidoc: FAILED: %f: line %l: %m,' .
-        \ '%Easciidoc: FAILED: %f: %m,' .
-        \ '%Wasciidoc: %tARNING: %f: line %l: %m,' .
-        \ '%Wasciidoc: %tARNING: %f: %m,' .
-        \ '%Wasciidoc: DEPRECATED: %f: line %l: %m,' .
-        \ '%Wasciidoc: DEPRECATED: %f: %m'
+        \ '%E%\w%\+: %tRROR: %f: line %l: %m,' .
+        \ '%E%\w%\+: %tRROR: %f: %m,' .
+        \ '%E%\w%\+: FAILED: %f: line %l: %m,' .
+        \ '%E%\w%\+: FAILED: %f: %m,' .
+        \ '%W%\w%\+: %tARNING: %f: line %l: %m,' .
+        \ '%W%\w%\+: %tARNING: %f: %m,' .
+        \ '%W%\w%\+: DEPRECATED: %f: line %l: %m,' .
+        \ '%W%\w%\+: DEPRECATED: %f: %m'
 
     return SyntasticMake({
         \ 'makeprg': makeprg,

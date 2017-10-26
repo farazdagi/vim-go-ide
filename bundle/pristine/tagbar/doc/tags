@@ -13,6 +13,7 @@ g:tagbar_autoclose	tagbar.txt	/*g:tagbar_autoclose*
 g:tagbar_autofocus	tagbar.txt	/*g:tagbar_autofocus*
 g:tagbar_autopreview	tagbar.txt	/*g:tagbar_autopreview*
 g:tagbar_autoshowtag	tagbar.txt	/*g:tagbar_autoshowtag*
+g:tagbar_case_insensitive	tagbar.txt	/*g:tagbar_case_insensitive*
 g:tagbar_compact	tagbar.txt	/*g:tagbar_compact*
 g:tagbar_ctags_bin	tagbar.txt	/*g:tagbar_ctags_bin*
 g:tagbar_expand	tagbar.txt	/*g:tagbar_expand*
@@ -24,6 +25,7 @@ g:tagbar_left	tagbar.txt	/*g:tagbar_left*
 g:tagbar_previewwin_pos	tagbar.txt	/*g:tagbar_previewwin_pos*
 g:tagbar_show_linenumbers	tagbar.txt	/*g:tagbar_show_linenumbers*
 g:tagbar_show_visibility	tagbar.txt	/*g:tagbar_show_visibility*
+g:tagbar_silent	tagbar.txt	/*g:tagbar_silent*
 g:tagbar_singleclick	tagbar.txt	/*g:tagbar_singleclick*
 g:tagbar_sort	tagbar.txt	/*g:tagbar_sort*
 g:tagbar_status_func	tagbar.txt	/*g:tagbar_status_func*

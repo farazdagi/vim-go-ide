@@ -10,7 +10,7 @@ let g:SyntasticLoclist = {}
 function! g:SyntasticLoclist.New(rawLoclist) abort " {{{2
     let newObj = copy(self)
 
-    let llist = filter(copy(a:rawLoclist), 'v:val["valid"] == 1')
+    let llist = filter(copy(a:rawLoclist), 'v:val["valid"]')
 
     for e in llist
         if get(e, 'type', '') ==# ''
@@ -27,17 +27,18 @@ function! g:SyntasticLoclist.New(rawLoclist) abort " {{{2
     return newObj
 endfunction " }}}2
 
-function! g:SyntasticLoclist.current() abort " {{{2
-    if !exists('b:syntastic_loclist') || empty(b:syntastic_loclist)
-        let b:syntastic_loclist = g:SyntasticLoclist.New([])
+function! g:SyntasticLoclist.current(...) abort " {{{2
+    let buf = a:0 ? a:1 : bufnr('')
+    let loclist = syntastic#util#getbufvar(buf, 'syntastic_loclist', {})
+    if type(loclist) != type({}) || empty(loclist)
+        unlet! loclist
+        let loclist = g:SyntasticLoclist.New([])
     endif
-    return b:syntastic_loclist
+    return loclist
 endfunction " }}}2
 
 function! g:SyntasticLoclist.extend(other) abort " {{{2
-    let list = self.copyRaw()
-    call extend(list, a:other.copyRaw())
-    return g:SyntasticLoclist.New(list)
+    call extend(self._rawLoclist, a:other.copyRaw())
 endfunction " }}}2
 
 function! g:SyntasticLoclist.sort() abort " {{{2
@@ -110,19 +111,21 @@ function! g:SyntasticLoclist.getStatuslineFlag() abort " {{{2
             "hide stuff wrapped in %B(...) unless there are both errors and warnings
             let output = substitute(output, '\m\C%B{\([^}]*\)}', (num_warnings && num_errors) ? '\1' : '' , 'g')
 
-            "sub in the total errors/warnings/both
-            let output = substitute(output, '\m\C%w', num_warnings, 'g')
-            let output = substitute(output, '\m\C%e', num_errors, 'g')
-            let output = substitute(output, '\m\C%t', num_issues, 'g')
-
-            "first error/warning line num
-            let output = substitute(output, '\m\C%F', num_issues ? self._rawLoclist[0]['lnum'] : '', 'g')
-
-            "first error line num
-            let output = substitute(output, '\m\C%fe', num_errors ? errors[0]['lnum'] : '', 'g')
-
-            "first warning line num
-            let output = substitute(output, '\m\C%fw', num_warnings ? warnings[0]['lnum'] : '', 'g')
+            let flags = {
+                \ '%':  '%',
+                \ 't':  num_issues,
+                \ 'e':  num_errors,
+                \ 'w':  num_warnings,
+                \ 'N':  (num_issues ? fnamemodify( bufname(self._rawLoclist[0]['bufnr']), ':t') : ''),
+                \ 'P':  (num_issues ? fnamemodify( bufname(self._rawLoclist[0]['bufnr']), ':p:~:.') : ''),
+                \ 'F':  (num_issues ? self._rawLoclist[0]['lnum'] : ''),
+                \ 'ne': (num_errors ? fnamemodify( bufname(errors[0]['bufnr']), ':t') : ''),
+                \ 'pe': (num_errors ? fnamemodify( bufname(errors[0]['bufnr']), ':p:~:.') : ''),
+                \ 'fe': (num_errors ? errors[0]['lnum'] : ''),
+                \ 'nw': (num_warnings ? fnamemodify( bufname(warnings[0]['bufnr']), ':t') : ''),
+                \ 'pw': (num_warnings ? fnamemodify( bufname(warnings[0]['bufnr']), ':p:~:.') : ''),
+                \ 'fw': (num_warnings ? warnings[0]['lnum'] : '') }
+            let output = substitute(output, '\v\C\%(-?\d*%(\.\d+)?)([npf][ew]|[NPFtew%])', '\=syntastic#util#wformat(submatch(1), flags[submatch(2)])', 'g')
 
             let self._stl_flag = output
         else
@@ -165,7 +168,6 @@ function! g:SyntasticLoclist.setOwner(buffer) abort " {{{2
 endfunction " }}}2
 
 function! g:SyntasticLoclist.deploy() abort " {{{2
-    call self.setOwner(bufnr(''))
     let self._stamp = syntastic#util#stamp()
     for buf in self.getBuffers()
         call setbufvar(buf, 'syntastic_loclist', self)
@@ -279,7 +281,7 @@ endfunction " }}}2
 "
 "would return all errors for buffer 10.
 "
-"Note that all comparisons are done with ==?
+"Note that all string comparisons are done with ==?
 function! g:SyntasticLoclist.filter(filters) abort " {{{2
     let conditions = values(map(copy(a:filters), 's:_translate(v:key, v:val)'))
     let filter = len(conditions) == 1 ?
@@ -287,20 +289,29 @@ function! g:SyntasticLoclist.filter(filters) abort " {{{2
     return filter(copy(self._rawLoclist), filter)
 endfunction " }}}2
 
-function! g:SyntasticLoclist.setloclist() abort " {{{2
+function! g:SyntasticLoclist.setloclist(new) abort " {{{2
     if !exists('w:syntastic_loclist_set')
-        let w:syntastic_loclist_set = 0
+        let w:syntastic_loclist_set = []
     endif
-    let replace = g:syntastic_reuse_loc_lists && w:syntastic_loclist_set
-    call syntastic#log#debug(g:_SYNTASTIC_DEBUG_NOTIFICATIONS, 'loclist: setloclist ' . (replace ? '(replace)' : '(new)'))
-    call setloclist(0, self.getRaw(), replace ? 'r' : ' ')
-    let w:syntastic_loclist_set = 1
+    if a:new || empty(w:syntastic_loclist_set) || w:syntastic_loclist_set != [self._owner, getbufvar(self._owner, 'changedtick')]
+        let replace = !a:new && g:syntastic_reuse_loc_lists && !empty(w:syntastic_loclist_set)
+        call syntastic#log#debug(g:_SYNTASTIC_DEBUG_NOTIFICATIONS, 'loclist: setloclist ' . (replace ? '(replace)' : '(new)'))
+        call setloclist(0, self.getRaw(), replace ? 'r' : ' ')
+        try
+            " Vim 7.4.2200 or later
+            call setloclist(0, [], 'r', { 'title': ':SyntasticCheck ' . self._name })
+        catch /\m^Vim\%((\a\+)\)\=:E\%(118\|731\)/
+            " do nothing
+        endtry
+        call syntastic#util#setLastTick(self._owner)
+        let w:syntastic_loclist_set = [self._owner, getbufvar(self._owner, 'syntastic_lasttick')]
+    endif
 endfunction " }}}2
 
 "display the cached errors for this buf in the location list
 function! g:SyntasticLoclist.show() abort " {{{2
     call syntastic#log#debug(g:_SYNTASTIC_DEBUG_NOTIFICATIONS, 'loclist: show')
-    call self.setloclist()
+    call self.setloclist(0)
 
     if !self.isEmpty()
         let num = winnr()

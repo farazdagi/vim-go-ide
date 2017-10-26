@@ -37,12 +37,34 @@ function! syntastic#util#system(command) abort " {{{2
     let $LC_MESSAGES = 'C'
     let $LC_ALL = ''
 
-    let out = system(a:command)
+    let crashed = 0
+    let cmd_start = reltime()
+    try
+        let out = system(a:command)
+    catch
+        let crashed = 1
+        call syntastic#log#error('exception running system(' . string(a:command) . '): ' . v:exception)
+        if syntastic#util#isRunningWindows()
+            call syntastic#log#debug(g:_SYNTASTIC_DEBUG_CHECKERS, '$TMP = ' . string($TMP) . ', $TEMP = ' . string($TEMP))
+        else
+            call syntastic#log#debug(g:_SYNTASTIC_DEBUG_CHECKERS, '$TERM = ' . string($TERM))
+            call syntastic#log#debug(g:_SYNTASTIC_DEBUG_CHECKERS, '$TMPDIR = ' . string($TMPDIR))
+        endif
+        call syntastic#log#debug(g:_SYNTASTIC_DEBUG_TRACE, '$PATH = ' . string($PATH))
+        call syntastic#log#debug(g:_SYNTASTIC_DEBUG_TRACE, 'getcwd() = ' . string(getcwd()))
+        call syntastic#log#debugShowOptions(g:_SYNTASTIC_DEBUG_TRACE, g:_SYNTASTIC_SHELL_OPTIONS)
+        let out = ''
+    endtry
+    let cmd_time = split(reltimestr(reltime(cmd_start)))[0]
 
     let $LC_ALL = old_lc_all
     let $LC_MESSAGES = old_lc_messages
 
     let &shell = old_shell
+
+    if !crashed && exists('g:_SYNTASTIC_DEBUG_TRACE')
+        call syntastic#log#debug(g:_SYNTASTIC_DEBUG_TRACE, 'system: command run in ' . cmd_time . 's')
+    endif
 
     return out
 endfunction " }}}2
@@ -51,10 +73,10 @@ endfunction " }}}2
 function! syntastic#util#tmpdir() abort " {{{2
     let tempdir = ''
 
-    if (has('unix') || has('mac')) && executable('mktemp')
+    if (has('unix') || has('mac')) && executable('mktemp') && !has('win32unix')
         " TODO: option "-t" to mktemp(1) is not portable
         let tmp = $TMPDIR !=# '' ? $TMPDIR : $TMP !=# '' ? $TMP : '/tmp'
-        let out = split(syntastic#util#system('mktemp -q -d ' . tmp . '/vim-syntastic-' . getpid() . '-XXXXXXXX'), "\n")
+        let out = split(syntastic#util#system('mktemp -q -d ' . tmp . '/vim-syntastic-' . s:_fuzz() . '-XXXXXXXX'), "\n")
         if v:shell_error == 0 && len(out) == 1
             let tempdir = out[0]
         endif
@@ -62,13 +84,13 @@ function! syntastic#util#tmpdir() abort " {{{2
 
     if tempdir ==# ''
         if has('win32') || has('win64')
-            let tempdir = $TEMP . syntastic#util#Slash() . 'vim-syntastic-' . getpid()
+            let tempdir = $TEMP . syntastic#util#Slash() . 'vim-syntastic-' . s:_fuzz()
         elseif has('win32unix')
-            let tempdir = syntastic#util#CygwinPath('/tmp/vim-syntastic-'  . getpid())
+            let tempdir = syntastic#util#CygwinPath('/tmp/vim-syntastic-'  . s:_fuzz())
         elseif $TMPDIR !=# ''
-            let tempdir = $TMPDIR . '/vim-syntastic-' . getpid()
+            let tempdir = $TMPDIR . '/vim-syntastic-' . s:_fuzz()
         else
-            let tempdir = '/tmp/vim-syntastic-' . getpid()
+            let tempdir = '/tmp/vim-syntastic-' . s:_fuzz()
         endif
 
         try
@@ -90,36 +112,29 @@ function! syntastic#util#rmrf(what) abort " {{{2
     endif
 
     if  getftype(a:what) ==# 'dir'
-        if !exists('s:rmrf')
-            let s:rmrf =
-                \ has('unix') || has('mac') ? 'rm -rf' :
-                \ has('win32') || has('win64') ? 'rmdir /S /Q' :
-                \ has('win16') || has('win95') || has('dos16') || has('dos32') ? 'deltree /Y' : ''
-        endif
-
-        if s:rmrf !=# ''
-            silent! call syntastic#util#system(s:rmrf . ' ' . syntastic#util#shescape(a:what))
-        else
-            call s:_rmrf(a:what)
-        endif
+        call s:_delete(a:what, 'rf')
     else
         silent! call delete(a:what)
     endif
 endfunction " }}}2
 
-"search the first 5 lines of the file for a magic number and return a map
-"containing the args and the executable
+function! syntastic#util#getbufvar(buf, name, ...) abort " {{{2
+    return a:0 ? s:_getbufvar(a:buf, a:name, a:1) : getbufvar(a:buf, a:name)
+endfunction " }}}2
+
+" Search the first 5 lines of the file for a magic number and return a map
+" containing the args and the executable
 "
-"e.g.
+" e.g.
 "
-"#!/usr/bin/perl -f -bar
+" #!/usr/bin/perl -f -bar
 "
-"returns
+" returns
 "
-"{'exe': '/usr/bin/perl', 'args': ['-f', '-bar']}
-function! syntastic#util#parseShebang() abort " {{{2
+" {'exe': '/usr/bin/perl', 'args': ['-f', '-bar']}
+function! syntastic#util#parseShebang(buf) abort " {{{2
     for lnum in range(1, 5)
-        let line = getline(lnum)
+        let line = get(getbufline(a:buf, lnum), 0, '')
         if line =~# '^#!'
             let line = substitute(line, '\v^#!\s*(\S+/env(\s+-\S+)*\s+)?', '', '')
             let exe = matchstr(line, '\m^\S*\ze')
@@ -131,12 +146,24 @@ function! syntastic#util#parseShebang() abort " {{{2
     return { 'exe': '', 'args': [] }
 endfunction " }}}2
 
-" Get the value of a variable.  Allow local variables to override global ones.
+" Get the value of a Vim variable.  Allow buffer variables to override global ones.
+function! syntastic#util#bufRawVar(buf, name, ...) abort " {{{2
+    return s:_getbufvar(a:buf, a:name, get(g:, a:name, a:0 ? a:1 : ''))
+endfunction "}}}2
+
+" Get the value of a syntastic variable.  Allow buffer variables to override global ones.
+function! syntastic#util#bufVar(buf, name, ...) abort " {{{2
+    return call('syntastic#util#bufRawVar', [a:buf, 'syntastic_' . a:name] + a:000)
+endfunction "}}}2
+
+" Get the value of a Vim variable.  Allow local variables to override global ones.
+function! syntastic#util#rawVar(name, ...) abort " {{{2
+    return get(b:, a:name, get(g:, a:name, a:0 ? a:1 : ''))
+endfunction " }}}2
+
+" Get the value of a syntastic variable.  Allow local variables to override global ones.
 function! syntastic#util#var(name, ...) abort " {{{2
-    return
-        \ exists('b:syntastic_' . a:name) ? b:syntastic_{a:name} :
-        \ exists('g:syntastic_' . a:name) ? g:syntastic_{a:name} :
-        \ a:0 > 0 ? a:1 : ''
+    return call('syntastic#util#rawVar', ['syntastic_' . a:name] + a:000)
 endfunction " }}}2
 
 " Parse a version string.  Return an array of version components.
@@ -168,11 +195,6 @@ function! syntastic#util#compareLexi(a, b) abort " {{{2
     return 0
 endfunction " }}}2
 
-" strwidth() was added in Vim 7.3; if it doesn't exist, we use strlen()
-" and hope for the best :)
-let s:_width = function(exists('*strwidth') ? 'strwidth' : 'strlen')
-lockvar s:_width
-
 function! syntastic#util#screenWidth(str, tabstop) abort " {{{2
     let chunks = split(a:str, "\t", 1)
     let width = s:_width(chunks[-1])
@@ -183,7 +205,7 @@ function! syntastic#util#screenWidth(str, tabstop) abort " {{{2
     return width
 endfunction " }}}2
 
-"print as much of a:msg as possible without "Press Enter" prompt appearing
+" Print as much of a:msg as possible without "Press Enter" prompt appearing
 function! syntastic#util#wideMsg(msg) abort " {{{2
     let old_ruler = &ruler
     let old_showcmd = &showcmd
@@ -226,7 +248,7 @@ function! syntastic#util#bufIsActive(buffer) abort " {{{2
     return 0
 endfunction " }}}2
 
-" start in directory a:where and walk up the parent folders until it finds a
+" Start in directory a:where and walk up the parent folders until it finds a
 " file named a:what; return path to that file
 function! syntastic#util#findFileInParent(what, where) abort " {{{2
     let old_suffixesadd = &suffixesadd
@@ -236,7 +258,7 @@ function! syntastic#util#findFileInParent(what, where) abort " {{{2
     return file
 endfunction " }}}2
 
-" start in directory a:where and walk up the parent folders until it finds a
+" Start in directory a:where and walk up the parent folders until it finds a
 " file matching a:what; return path to that file
 function! syntastic#util#findGlobInParent(what, where) abort " {{{2
     let here = fnamemodify(a:where, ':p')
@@ -251,7 +273,12 @@ function! syntastic#util#findGlobInParent(what, where) abort " {{{2
 
     let old = ''
     while here !=# ''
-        let p = split(globpath(here, a:what, 1), '\n')
+        try
+            " Vim 7.4.279 and later
+            let p = globpath(here, a:what, 1, 1)
+        catch /\m^Vim\%((\a\+)\)\=:E118/
+            let p = split(globpath(here, a:what, 1), "\n")
+        endtry
 
         if !empty(p)
             return fnamemodify(p[0], ':p')
@@ -269,13 +296,44 @@ function! syntastic#util#findGlobInParent(what, where) abort " {{{2
     return ''
 endfunction " }}}2
 
+" Returns the buffer number of a filename
+" @vimlint(EVL104, 1, l:old_shellslash)
+function! syntastic#util#fname2buf(fname) abort " {{{2
+    if exists('+shellslash')
+        " bufnr() can't cope with backslashes
+        let old_shellslash = &shellslash
+        let &shellslash = 1
+    endif
+
+    " this is a best-effort attempt to escape file patterns (cf. :h file-pattern)
+    " XXX it fails for filenames containing something like \{2,3}
+    for md in [':~:.', ':~', ':p']
+        let buf = bufnr('^' . escape(fnamemodify(a:fname, md), '\*?,{}[') . '$')
+        if buf != -1
+            break
+        endif
+    endfor
+    if buf == -1
+        " XXX definitely wrong, but hope is the last thing to die :)
+        let buf = bufnr(fnamemodify(a:fname, ':p'))
+    endif
+
+    if exists('+shellslash')
+        let &shellslash = old_shellslash
+    endif
+
+    return buf
+endfunction " }}}2
+" @vimlint(EVL104, 0, l:old_shellslash)
+
 " Returns unique elements in a list
 function! syntastic#util#unique(list) abort " {{{2
     let seen = {}
     let uniques = []
     for e in a:list
-        if !has_key(seen, e)
-            let seen[e] = 1
+        let k = string(e)
+        if !has_key(seen, k)
+            let seen[k] = 1
             call add(uniques, e)
         endif
     endfor
@@ -303,7 +361,7 @@ function! syntastic#util#argsescape(opt) abort " {{{2
     return []
 endfunction " }}}2
 
-" decode XML entities
+" Decode XML entities
 function! syntastic#util#decodeXMLEntities(string) abort " {{{2
     let str = a:string
     let str = substitute(str, '\m&lt;', '<', 'g')
@@ -339,8 +397,21 @@ function! syntastic#util#stamp() abort " {{{2
     return split( split(reltimestr(reltime(g:_SYNTASTIC_START)))[0], '\.' )
 endfunction " }}}2
 
-let s:_str2float = function(exists('*str2float') ? 'str2float' : 'str2nr')
-lockvar s:_str2float
+function! syntastic#util#setLastTick(buf) abort " {{{2
+    call setbufvar(a:buf, 'syntastic_lasttick', getbufvar(a:buf, 'changedtick'))
+endfunction " }}}2
+
+" Add unique IDs to windows
+function! syntastic#util#setWids() abort " {{{2
+    for tab in range(1, tabpagenr('$'))
+        for win in range(1, tabpagewinnr(tab, '$'))
+            if gettabwinvar(tab, win, 'syntastic_wid') ==# ''
+                call settabwinvar(tab, win, 'syntastic_wid', s:_wid_base . s:_wid_pool)
+                let s:_wid_pool += 1
+            endif
+        endfor
+    endfor
+endfunction " }}}2
 
 function! syntastic#util#str2float(val) abort " {{{2
     return s:_str2float(a:val)
@@ -348,6 +419,61 @@ endfunction " }}}2
 
 function! syntastic#util#float2str(val) abort " {{{2
     return s:_float2str(a:val)
+endfunction " }}}2
+
+" Crude printf()-like width formatter.  Handles wide characters.
+function! syntastic#util#wformat(format, str) abort " {{{2
+    if a:format ==# ''
+        return a:str
+    endif
+
+ echomsg string(a:format) . ', ' . string(a:str)
+    let specs = matchlist(a:format, '\v^(-?)(0?)(%([1-9]\d*))?%(\.(\d+))?$')
+    if len(specs) < 5
+        return a:str
+    endif
+
+    let flushleft = specs[1] ==# '-'
+    let lpad = specs[2] ==# '0' ? '0' : ' '
+    let minlen = str2nr(specs[3])
+    let maxlen = str2nr(specs[4])
+    let out = substitute(a:str, "\t", ' ', 'g')
+
+    if maxlen && s:_width(out) > maxlen
+        let chars = filter(split(out, '\zs\ze', 1), 'v:val !=# ""')
+        let out = ''
+
+        if flushleft
+            for c in chars
+                if s:_width(out . c) < maxlen
+                    let out .= c
+                else
+                    let out .= &encoding ==# 'utf-8' && &termencoding ==# 'utf-8' ? "\u2026" : '>'
+                    break
+                endif
+            endfor
+        else
+            call reverse(chars)
+            for c in chars
+                if s:_width(c . out) < maxlen
+                    let out = c . out
+                else
+                    let out = (&encoding ==# 'utf-8' && &termencoding ==# 'utf-8' ? "\u2026" : '<') . out
+                    break
+                endif
+            endfor
+        endif
+    endif
+
+    if minlen && s:_width(out) < minlen
+        if flushleft
+            let out .= repeat(' ', minlen - s:_width(out))
+        else
+            let out = repeat(lpad, minlen - s:_width(out)) . out
+        endif
+    endif
+
+    return out
 endfunction " }}}2
 
 " }}}1
@@ -408,6 +534,32 @@ function! s:_translateElement(key, term) abort " {{{2
     return ret
 endfunction " }}}2
 
+" strwidth() was added in Vim 7.3; if it doesn't exist, we use strlen()
+" and hope for the best :)
+let s:_width = function(exists('*strwidth') ? 'strwidth' : 'strlen')
+lockvar s:_width
+
+" @vimlint(EVL103, 1, a:flags)
+function! s:_delete_dumb(what, flags) abort " {{{2
+    if !exists('s:rmrf')
+        let s:rmrf =
+            \ has('unix') || has('mac') ? 'rm -rf' :
+            \ has('win32') || has('win64') ? 'rmdir /S /Q' :
+            \ has('win16') || has('win95') || has('dos16') || has('dos32') ? 'deltree /Y' : ''
+    endif
+
+    if s:rmrf !=# ''
+        silent! call syntastic#util#system(s:rmrf . ' ' . syntastic#util#shescape(a:what))
+    else
+        call s:_rmrf(a:what)
+    endif
+endfunction " }}}2
+" @vimlint(EVL103, 0, a:flags)
+
+" delete(dir, 'rf') was added in Vim 7.4.1107, but it didn't become usable until 7.4.1128
+let s:_delete = function(v:version > 704 || (v:version == 704 && has('patch1128')) ? 'delete' : 's:_delete_dumb')
+lockvar s:_delete
+
 function! s:_rmrf(what) abort " {{{2
     if !exists('s:rmdir')
         let s:rmdir = syntastic#util#shescape(get(g:, 'netrw_localrmdir', 'rmdir'))
@@ -418,7 +570,13 @@ function! s:_rmrf(what) abort " {{{2
             return
         endif
 
-        for f in split(globpath(a:what, '*', 1), "\n")
+        try
+            " Vim 7.4.279 and later
+            let entries = globpath(a:what, '*', 1, 1)
+        catch /\m^Vim\%((\a\+)\)\=:E118/
+            let entries = split(globpath(a:what, '*', 1), "\n")
+        endtry
+        for f in entries
             call s:_rmrf(f)
         endfor
         silent! call syntastic#util#system(s:rmdir . ' ' . syntastic#util#shescape(a:what))
@@ -426,6 +584,9 @@ function! s:_rmrf(what) abort " {{{2
         silent! call delete(a:what)
     endif
 endfunction " }}}2
+
+let s:_str2float = function(exists('*str2float') ? 'str2float' : 'str2nr')
+lockvar s:_str2float
 
 function! s:_float2str_smart(val) abort " {{{2
     return printf('%.1f', a:val)
@@ -438,7 +599,29 @@ endfunction " }}}2
 let s:_float2str = function(has('float') ? 's:_float2str_smart' : 's:_float2str_dumb')
 lockvar s:_float2str
 
+function! s:_getbufvar_dumb(buf, name, ...) abort " {{{2
+    let ret = getbufvar(a:buf, a:name)
+    if a:0 && type(ret) == type('') && ret ==# ''
+        unlet! ret
+        let ret = a:1
+    endif
+    return ret
+endfunction "}}}2
+
+let s:_getbufvar = function(v:version > 703 || (v:version == 703 && has('patch831')) ? 'getbufvar' : 's:_getbufvar_dumb')
+lockvar s:_getbufvar
+
+function! s:_fuzz_dumb() abort " {{{2
+    return 'tmp'
+endfunction " }}}2
+
+let s:_fuzz = function(exists('*getpid') ? 'getpid' : 's:_fuzz_dumb')
+lockvar s:_fuzz
+
 " }}}1
+
+let s:_wid_base = 'syntastic_' . s:_fuzz() . '_' . reltimestr(g:_SYNTASTIC_START) . '_'
+let s:_wid_pool = 0
 
 let &cpo = s:save_cpo
 unlet s:save_cpo

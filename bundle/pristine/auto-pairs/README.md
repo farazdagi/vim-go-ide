@@ -67,6 +67,14 @@ Features
         input: |[foo, bar()] (press (<M-e> at |)
         output: ([foo, bar()])
 
+*   Quick move char to closed pair
+
+        input: (|){["foo"]} (press <M-}> at |)
+        output: ({["foo"]}|)
+
+        input: |[foo, bar()] (press (<M-]> at |)
+        output: ([foo, bar()]|)
+
 *   Quick jump to closed pair.
 
         input:
@@ -202,6 +210,12 @@ Options
         Map <BS> to delete brackets, quotes in pair
         execute 'inoremap <buffer> <silent> <BS> <C-R>=AutoPairsDelete()<CR>'
 
+*   g:AutoPairsMapCh
+
+        Default : 1
+
+        Map <C-h> to delete brackets, quotes in pair
+
 *   g:AutoPairsMapCR
 
         Default : 1
@@ -243,6 +257,13 @@ Options
 
         Work with FlyMode, insert the key at the Fly Mode jumped postion
 
+*   g:AutoPairsMoveCharacter
+
+        Default: "()[]{}\"'"
+
+        Map <M-(> <M-)> <M-[> <M-]> <M-{> <M-}> <M-"> <M-'> to
+        move character under the cursor to the pair.
+
 Buffer Level Pairs Setting
 --------------------------
 
@@ -272,17 +293,20 @@ TroubleShooting
 
     3. use DEL or <C-O>x to delete the character insert by plugin.
 
+* Swedish Character Conflict
+
+    Because AutoPairs uses Meta(Alt) key as shortcut, it is conflict with some Swedish character such as å.
+    To fix the issue, you need remap or disable the related shortcut.
 
 Known Issues
 -----------------------
-There are the issues I cannot fix.
-
 Breaks '.' - [issue #3](https://github.com/jiangmiao/auto-pairs/issues/3)
 
     Description: After entering insert mode and inputing `[hello` then leave insert
                  mode by `<ESC>`. press '.' will insert 'hello' instead of '[hello]'.
-    Reason: `[` actually equals `[]\<LEFT>` and \<LEFT> will break '.'
-    Solution: none
+    Reason: `[` actually equals `[]\<LEFT>` and \<LEFT> will break '.'.
+            After version 7.4.849, Vim implements new keyword <C-G>U to avoid the break
+    Solution: Update Vim to 7.4.849+
 
 Contributors
 ------------

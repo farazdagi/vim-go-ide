@@ -49,9 +49,10 @@ let s:source = {
       \ 'min_pattern_length' :
       \     g:neocomplete#auto_completion_start_length,
       \ 'hooks' : {},
+      \ 'is_volatile' : 1,
       \}
 
-function! s:source.hooks.on_init(context) "{{{
+function! s:source.hooks.on_init(context) abort "{{{
   let s:buffer_sources = {}
 
   augroup neocomplete "{{{
@@ -76,37 +77,37 @@ function! s:source.hooks.on_init(context) "{{{
 endfunction
 "}}}
 
-function! s:source.hooks.on_final(context) "{{{
+function! s:source.hooks.on_final(context) abort "{{{
   silent! delcommand NeoCompleteBufferMakeCache
 
   let s:buffer_sources = {}
 endfunction"}}}
 
-function! s:source.hooks.on_post_filter(context) "{{{
+function! s:source.hooks.on_post_filter(context) abort "{{{
   " Filters too long word.
   call filter(a:context.candidates,
         \ 'len(v:val.word) < g:neocomplete#sources#buffer#max_keyword_width')
 endfunction"}}}
 
-function! s:source.gather_candidates(context) "{{{
-  call s:check_async_cache()
+function! s:source.gather_candidates(context) abort "{{{
+  call s:check_async_cache(a:context)
 
   let keyword_list = []
-  for source in s:get_sources_list()
+  for source in s:get_sources_list(a:context)
     let keyword_list += source.words
   endfor
   return keyword_list
 endfunction"}}}
 
-function! neocomplete#sources#buffer#define() "{{{
+function! neocomplete#sources#buffer#define() abort "{{{
   return s:source
 endfunction"}}}
 
-function! neocomplete#sources#buffer#get_frequencies() "{{{
+function! neocomplete#sources#buffer#get_frequencies() abort "{{{
   return get(get(s:buffer_sources, bufnr('%'), {}), 'frequencies', {})
 endfunction"}}}
 
-function! neocomplete#sources#buffer#make_cache_current_line() "{{{
+function! neocomplete#sources#buffer#make_cache_current_line() abort "{{{
   if neocomplete#is_locked()
     return
   endif
@@ -127,10 +128,9 @@ function! s:should_create_cache(bufnr) " {{{
         \  || filepath !~# g:neocomplete#sources#buffer#disabled_pattern)
 endfunction"}}}
 
-function! s:get_sources_list() "{{{
+function! s:get_sources_list(context) abort "{{{
   let filetypes_dict = {}
-  for filetype in neocomplete#get_source_filetypes(
-        \ neocomplete#get_context_filetype())
+  for filetype in a:context.filetypes
     let filetypes_dict[filetype] = 1
   endfor
 
@@ -141,7 +141,7 @@ function! s:get_sources_list() "{{{
         \ || (bufname('%') ==# '[Command Line]' && bufwinnr('#') == v:key)"))
 endfunction"}}}
 
-function! s:initialize_source(srcname) "{{{
+function! s:initialize_source(srcname) abort "{{{
   let path = fnamemodify(bufname(a:srcname), ':p')
   let filename = fnamemodify(path, ':t')
   if filename == ''
@@ -167,7 +167,7 @@ function! s:initialize_source(srcname) "{{{
         \}
 endfunction"}}}
 
-function! s:make_cache_file(srcname) "{{{
+function! s:make_cache_file(srcname) abort "{{{
   " Initialize source.
   if !has_key(s:buffer_sources, a:srcname)
     call s:initialize_source(a:srcname)
@@ -196,7 +196,7 @@ function! s:make_cache_file(srcname) "{{{
         \ }]
 endfunction"}}}
 
-function! s:make_cache_buffer(srcname) "{{{
+function! s:make_cache_buffer(srcname) abort "{{{
   if !s:should_create_cache(a:srcname)
     return
   endif
@@ -235,7 +235,7 @@ function! s:make_cache_buffer(srcname) "{{{
         \ }]
 endfunction"}}}
 
-function! s:check_changed_buffer(bufnr) "{{{
+function! s:check_changed_buffer(bufnr) abort "{{{
   let source = s:buffer_sources[a:bufnr]
 
   let ft = getbufvar(a:bufnr, '&filetype')
@@ -251,7 +251,7 @@ function! s:check_changed_buffer(bufnr) "{{{
   return source.name != filename || source.filetype != ft
 endfunction"}}}
 
-function! s:check_source() "{{{
+function! s:check_source() abort "{{{
   " Check new buffer.
   call map(filter(range(1, bufnr('$')), "
         \ (v:val != bufnr('%') || neocomplete#has_vimproc())
@@ -264,19 +264,17 @@ function! s:check_source() "{{{
         \ && s:should_create_cache(v:val)
         \ "), 's:make_cache_file(v:val)')
 
-  call s:check_async_cache()
-
   " Remove unlisted buffers.
   call filter(s:buffer_sources,
         \ "v:key == bufnr('%') || buflisted(str2nr(v:key))")
 endfunction"}}}
 
-function! s:exists_current_source() "{{{
+function! s:exists_current_source() abort "{{{
   return has_key(s:buffer_sources, bufnr('%')) &&
         \ !s:check_changed_buffer(bufnr('%'))
 endfunction"}}}
 
-function! s:make_cache_current_buffer(start, end) "{{{
+function! s:make_cache_current_buffer(start, end) abort "{{{
   let srcname = bufnr('%')
 
   " Make cache from current buffer.
@@ -300,7 +298,6 @@ function! s:make_cache_current_buffer(start, end) "{{{
 do
   local words = vim.eval('words')
   local dup = {}
-  local b = vim.buffer()
   local min_length = vim.eval('g:neocomplete#min_keyword_length')
   for linenr = vim.eval('a:start'), vim.eval('a:end') do
     local match = 0
@@ -327,8 +324,8 @@ EOF
   let source.words = neocomplete#util#uniq(source.words + words)
 endfunction"}}}
 
-function! s:check_async_cache() "{{{
-  for source in s:get_sources_list()
+function! s:check_async_cache(context) abort "{{{
+  for source in s:get_sources_list(a:context)
     if !has_key(s:async_dictionary_list, source.path)
       continue
     endif
@@ -347,15 +344,22 @@ function! s:check_async_cache() "{{{
 endfunction"}}}
 
 function! s:clean() abort "{{{
-  call neocomplete#helper#clean('buffer_cache')
   " Remove temporary files
-  call map(glob(printf('%s/%d_*',
+  for file in glob(printf('%s/%d_*',
         \ neocomplete#get_data_directory() . '/buffer_temp',
-        \ getpid()), 1, 1), 'delete(v:val)')
+        \ getpid()), 1, 1)
+    call delete(file)
+
+    let cachefile = neocomplete#get_data_directory() . '/buffer_cache/'
+          \ . substitute(substitute(file, ':', '=-', 'g'), '[/\\]', '=+', 'g')
+    if filereadable(cachefile)
+      call delete(cachefile)
+    endif
+  endfor
 endfunction"}}}
 
 " Command functions. "{{{
-function! neocomplete#sources#buffer#make_cache(name) "{{{
+function! neocomplete#sources#buffer#make_cache(name) abort "{{{
   if !neocomplete#is_enabled()
     call neocomplete#initialize()
   endif

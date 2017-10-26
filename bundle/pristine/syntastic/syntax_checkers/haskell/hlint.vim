@@ -1,6 +1,6 @@
 "============================================================================
 "File:        hlint.vim
-"Description: Syntax checking plugin for syntastic.vim
+"Description: Syntax checking plugin for syntastic
 "Maintainer:  Nicolas Wu <nicolas.wu at gmail dot com>
 "License:     BSD
 "============================================================================
@@ -14,12 +14,15 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 function! SyntaxCheckers_haskell_hlint_GetLocList() dict
+    let buf = bufnr('')
     let makeprg = self.makeprgBuild({
-        \ 'fname': syntastic#util#shexpand('%:p')})
+        \ 'fname': syntastic#util#shescape(fnamemodify(bufname(buf), ':p')) })
 
     let errorformat =
+        \ '%E%f:%l:%v: Error while reading hint file\, %m,' .
         \ '%E%f:%l:%v: Error: %m,' .
         \ '%W%f:%l:%v: Warning: %m,' .
+        \ '%W%f:%l:%v: Suggestion: %m,' .
         \ '%C%m'
 
     return SyntasticMake({

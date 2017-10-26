@@ -1,6 +1,6 @@
 "============================================================================
 "File:        clang_check.vim
-"Description: Syntax checking plugin for syntastic.vim
+"Description: Syntax checking plugin for syntastic
 "Maintainer:  Benjamin Bannier <bbannier at gmail dot com>
 "License:     This program is free software. It comes without any warranty,
 "             to the extent permitted by applicable law. You can redistribute
@@ -10,16 +10,13 @@
 "============================================================================
 
 if exists('g:loaded_syntastic_cpp_clang_check_checker')
-  finish
+    finish
 endif
 let g:loaded_syntastic_cpp_clang_check_checker = 1
-
-runtime! syntax_checkers/c/*.vim
 
 call g:SyntasticRegistry.CreateAndRegisterChecker({
     \ 'filetype': 'cpp',
     \ 'name': 'clang_check',
-    \ 'exec': 'clang-check',
     \ 'redirect': 'c/clang_check'})
 
 " vim: set sw=4 sts=4 et fdm=marker:

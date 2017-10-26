@@ -1,30 +1,8 @@
 "=============================================================================
 " FILE: snippets_complete.vim
-" AUTHOR:  Shougo Matsushita <Shougo.Matsu@gmail.com>
-" License: MIT license  {{{
-"     Permission is hereby granted, free of charge, to any person obtaining
-"     a copy of this software and associated documentation files (the
-"     "Software"), to deal in the Software without restriction, including
-"     without limitation the rights to use, copy, modify, merge, publish,
-"     distribute, sublicense, and/or sell copies of the Software, and to
-"     permit persons to whom the Software is furnished to do so, subject to
-"     the following conditions:
-"
-"     The above copyright notice and this permission notice shall be included
-"     in all copies or substantial portions of the Software.
-"
-"     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-"     OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-"     MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-"     IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-"     CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-"     TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-"     SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-" }}}
+" AUTHOR:  Shougo Matsushita <Shougo.Matsu at gmail.com>
+" License: MIT license
 "=============================================================================
-
-let s:save_cpo = &cpo
-set cpo&vim
 
 let s:source = {
       \ 'name' : 'snippets_complete',
@@ -33,15 +11,15 @@ let s:source = {
       \     g:neocomplcache_auto_completion_start_length,
       \}
 
-function! s:source.initialize() "{{{
+function! s:source.initialize() abort
   " Initialize.
   call neocomplcache#set_dictionary_helper(
         \ g:neocomplcache_source_rank, 'snippets_complete', 8)
   call neocomplcache#set_completion_length('snippets_complete',
         \ g:neocomplcache_auto_completion_start_length)
-endfunction"}}}
+endfunction
 
-function! s:source.get_keyword_pos(cur_text) "{{{
+function! s:source.get_keyword_pos(cur_text) abort
   let cur_word = matchstr(a:cur_text, '\w\+$')
   let word_candidates = neocomplcache#keyword_filter(
         \ filter(values(neosnippet#helpers#get_snippets()),
@@ -51,9 +29,9 @@ function! s:source.get_keyword_pos(cur_text) "{{{
   endif
 
   return match(a:cur_text, '\S\+$')
-endfunction"}}}
+endfunction
 
-function! s:source.get_complete_words(cur_keyword_pos, cur_keyword_str) "{{{
+function! s:source.get_complete_words(cur_keyword_pos, cur_keyword_str) abort
   let list = s:keyword_filter(neosnippet#helpers#get_snippets(), a:cur_keyword_str)
 
   for snippet in list
@@ -64,9 +42,9 @@ function! s:source.get_complete_words(cur_keyword_pos, cur_keyword_str) "{{{
   endfor
 
   return list
-endfunction"}}}
+endfunction
 
-function! s:keyword_filter(snippets, cur_keyword_str) "{{{
+function! s:keyword_filter(snippets, cur_keyword_str) abort
   " Uniq by real_name.
   let dict = {}
 
@@ -87,13 +65,8 @@ function! s:keyword_filter(snippets, cur_keyword_str) "{{{
   endfor
 
   return values(dict)
-endfunction"}}}
+endfunction
 
-function! neocomplcache#sources#snippets_complete#define() "{{{
+function! neocomplcache#sources#snippets_complete#define() abort
   return s:source
-endfunction"}}}
-
-let &cpo = s:save_cpo
-unlet s:save_cpo
-
-" vim: foldmethod=marker
+endfunction

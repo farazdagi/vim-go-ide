@@ -37,7 +37,7 @@ if !exists('s:dictionary_cache')
   let s:async_dictionary_list = {}
 endif
 
-function! neocomplete#sources#dictionary#define() "{{{
+function! neocomplete#sources#dictionary#define() abort "{{{
   return s:source
 endfunction"}}}
 
@@ -49,10 +49,9 @@ let s:source = {
       \ 'hooks' : {},
       \}
 
-function! s:source.hooks.on_init(context) "{{{
+function! s:source.hooks.on_init(context) abort "{{{
   augroup neocomplete "{{{
     autocmd FileType * call s:make_cache(&l:filetype)
-    autocmd VimLeavePre * call neocomplete#helper#clean('dictionary_cache')
   augroup END"}}}
 
   " Create cache directory.
@@ -62,15 +61,14 @@ function! s:source.hooks.on_init(context) "{{{
   call s:make_cache(&l:filetype)
 endfunction"}}}
 
-function! s:source.hooks.on_final(context) "{{{
+function! s:source.hooks.on_final(context) abort "{{{
   silent! delcommand NeoCompleteDictionaryMakeCache
 endfunction"}}}
 
-function! s:source.gather_candidates(context) "{{{
+function! s:source.gather_candidates(context) abort "{{{
   let list = []
 
-  for ft in neocomplete#get_source_filetypes(
-        \ neocomplete#get_context_filetype())
+  for ft in a:context.filetypes
     if !has_key(s:dictionary_cache, ft)
       call s:make_cache(ft)
     endif
@@ -84,14 +82,14 @@ function! s:source.gather_candidates(context) "{{{
   return list
 endfunction"}}}
 
-function! s:make_cache(filetype) "{{{
+function! s:make_cache(filetype) abort "{{{
   if !has_key(s:dictionary_cache, a:filetype)
         \ && !has_key(s:async_dictionary_list, a:filetype)
     call neocomplete#sources#dictionary#remake_cache(a:filetype)
   endif
 endfunction"}}}
 
-function! neocomplete#sources#dictionary#remake_cache(filetype) "{{{
+function! neocomplete#sources#dictionary#remake_cache(filetype) abort "{{{
   if !neocomplete#is_enabled()
     call neocomplete#initialize()
   endif
@@ -120,7 +118,7 @@ function! neocomplete#sources#dictionary#remake_cache(filetype) "{{{
   endfor
 endfunction"}}}
 
-function! neocomplete#sources#dictionary#get_dictionaries(filetype) "{{{
+function! neocomplete#sources#dictionary#get_dictionaries(filetype) abort "{{{
   let filetype = a:filetype
   if filetype == ''
     let filetype = neocomplete#get_context_filetype(1)

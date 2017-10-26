@@ -1,6 +1,6 @@
 "============================================================================
 "File:        ada.vim
-"Description: Syntax checking plugin for syntastic.vim
+"Description: Syntax checking plugin for syntastic
 "Maintainer:  Alfredo Di Napoli <alfredo.dinapoli@gmail.com>
 "License:     This program is free software. It comes without any warranty,
 "             to the extent permitted by applicable law.
@@ -32,8 +32,8 @@ function! SyntaxCheckers_ada_gcc_GetLocList() dict
         \     '%-G%f:%s:,' .
         \     '%f:%l:%c: %m,' .
         \     '%f:%l: %m',
-        \ 'main_flags': '-c -x ada -gnats',
-        \ 'header_flags': '-x ada -gnats',
+        \ 'main_flags': '-c -x ada -gnats -gnatef',
+        \ 'header_flags': '-x ada -gnats -gnatef',
         \ 'header_names': '\.ads$' })
 endfunction
 

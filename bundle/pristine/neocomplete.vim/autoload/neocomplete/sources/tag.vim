@@ -39,13 +39,11 @@ let s:source = {
       \ 'hooks' : {},
       \}
 
-function! s:source.hooks.on_init(context) "{{{
+function! s:source.hooks.on_init(context) abort "{{{
   let g:neocomplete#sources#tags#cache_limit_size =
         \ get(g:, 'neocomplete#sources#tags#cache_limit_size', 500000)
 
   augroup neocomplete "{{{
-    autocmd VimLeavePre * call neocomplete#helper#clean('tags_cache')
-    autocmd VimLeavePre * call neocomplete#helper#clean('tags_patterns')
     autocmd BufWritePost * call neocomplete#sources#tag#make_cache(0)
   augroup END"}}}
 
@@ -53,15 +51,15 @@ function! s:source.hooks.on_init(context) "{{{
   call neocomplete#cache#make_directory('tags_cache')
 endfunction"}}}
 
-function! s:source.hooks.on_final(context) "{{{
+function! s:source.hooks.on_final(context) abort "{{{
   silent! delcommand NeoCompleteTagMakeCache
 endfunction"}}}
 
-function! neocomplete#sources#tag#define() "{{{
+function! neocomplete#sources#tag#define() abort "{{{
   return s:source
 endfunction"}}}
 
-function! s:source.gather_candidates(context) "{{{
+function! s:source.gather_candidates(context) abort "{{{
   if !has_key(s:async_tags_list, bufnr('%'))
         \ && !has_key(s:tags_list, bufnr('%'))
     call neocomplete#sources#tag#make_cache(0)
@@ -77,7 +75,7 @@ function! s:source.gather_candidates(context) "{{{
   return copy(get(s:tags_list, bufnr('%'), []))
 endfunction"}}}
 
-function! s:initialize_tags(filename) "{{{
+function! s:initialize_tags(filename) abort "{{{
   " Initialize tags list.
   let ft = &filetype
   if ft == ''
@@ -92,7 +90,7 @@ function! s:initialize_tags(filename) "{{{
         \              ft, s:source.mark)
         \ }
 endfunction"}}}
-function! neocomplete#sources#tag#make_cache(force) "{{{
+function! neocomplete#sources#tag#make_cache(force) abort "{{{
   if !neocomplete#is_enabled()
     call neocomplete#initialize()
   endif
