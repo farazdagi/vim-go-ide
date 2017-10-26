@@ -35,17 +35,6 @@ map <leader>T :NERDTreeFind<cr>
 " Toogle on/off
 nmap <leader>o :NERDTreeToggle<cr>
 
-
-"------------------------------------------------------------------------------
-" BufExplorer
-"------------------------------------------------------------------------------
-
-" Shortcuts, type <leader>l to quickly navigate to necessary buffer
-map <leader>l :BufExplorer<cr>
-imap <leader>l <esc>:BufExplorer<cr>
-vmap <leader>l <esc>:BufExplorer<cr>
-
-
 "------------------------------------------------------------------------------
 " Fugitive
 "------------------------------------------------------------------------------

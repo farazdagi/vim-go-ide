@@ -1,3 +1,5 @@
+let mapleader = ","
+
 " enter the current millenium 
 set nocompatible
 
@@ -9,7 +11,10 @@ filetype plugin on
 set path+=**
 set wildmenu
 
-let g:neosnippet#disable_runtime_snippets = true
+" behavior(all runtime snippets are disabled).
+let g:neosnippet#disable_runtime_snippets = {
+\   '_' : 1,
+\ }
 
 " disable arrows
 noremap <Up> <NOP>
@@ -25,7 +30,7 @@ map <ScrollWheelDown> <Nop>
 map <S-ScrollWheelDown> <Nop>
 
 " tagbar
-nmap <Leader>tt :TagbarOpenAutoClose<CR>
+nmap <Leader>tb :TagbarOpenAutoClose<CR>
 
 au FileType go map <F6> :GoRename<CR>
 
