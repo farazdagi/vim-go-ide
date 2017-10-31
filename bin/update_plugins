@@ -11,12 +11,12 @@ from os import path
 EXCLUDED_PLUGINS = """
 bclose.vim https://github.com/rbgrouleff/bclose.vim
 bufexplorer https://github.com/corntrace/bufexplorer
-ack.vim https://github.com/mileszs/ack.vim
 gitv https://github.com/gregsexton/gitv
 """
 #--- Globals ----------------------------------------------
 PLUGINS = """
 nerdtree https://github.com/scrooloose/nerdtree
+ack.vim https://github.com/mileszs/ack.vim
 csapprox https://github.com/godlygeek/csapprox
 vim-fugitive https://github.com/tpope/vim-fugitive
 nerdcommenter https://github.com/scrooloose/nerdcommenter

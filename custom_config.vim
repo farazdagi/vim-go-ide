@@ -3,6 +3,11 @@ let mapleader = ","
 " enter the current millenium 
 set nocompatible
 
+command! MakeTags !ctags -R .
+
+cnoreabbrev Ack Ack!
+nnoremap <Leader>a :Ack!<Space>
+
 " enable syntax and plugins (for netrw)
 syntax enable 
 filetype plugin on 
@@ -30,7 +35,7 @@ map <ScrollWheelDown> <Nop>
 map <S-ScrollWheelDown> <Nop>
 
 " tagbar
-nmap <Leader>tb :TagbarOpenAutoClose<CR>
+nmap <Leader>tt :TagbarOpenAutoClose<CR>
 
 au FileType go map <F6> :GoRename<CR>
 
