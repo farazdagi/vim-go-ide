@@ -12,6 +12,7 @@ EXCLUDED_PLUGINS = """
 bclose.vim https://github.com/rbgrouleff/bclose.vim
 bufexplorer https://github.com/corntrace/bufexplorer
 gitv https://github.com/gregsexton/gitv
+javacomplete2 https://github.com/artur-shaik/vim-javacomplete2.git
 """
 #--- Globals ----------------------------------------------
 PLUGINS = """
