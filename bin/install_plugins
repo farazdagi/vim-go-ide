@@ -1,0 +1,93 @@
+#!/bin/bash
+
+CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+BUNDLE_PATH=${CURRENT_DIR}'/../bundle/'
+MAIN_OPTIONS_PATH=${CURRENT_DIR}'/../vimrc/main.vim'
+OPTIONS_PATH=${CURRENT_DIR}'/../vimrc/plugins/'
+
+plugins=(
+    https://github.com/mileszs/ack.vim 
+    https://github.com/Shougo/deoplete.nvim
+    https://github.com/scrooloose/nerdtree
+    https://github.com/godlygeek/csapprox
+    https://github.com/tpope/vim-fugitive
+    https://github.com/scrooloose/nerdcommenter
+    https://github.com/airblade/vim-gitgutter
+    https://github.com/scrooloose/syntastic
+    https://github.com/fatih/vim-go
+    https://github.com/jiangmiao/auto-pairs
+    https://github.com/majutsushi/tagbar
+        )
+
+reset_plugins () {
+    installed=( `ls ${BUNDLE_PATH}` )
+
+    plugin_names=( )
+
+    diff=()
+    for i in "${installed[@]}"; do
+        skip=
+        for plugin in ${plugins[@]}; do
+            j=`echo "${plugin}" | cut -d "/" -f 5`
+            [[ $i == $j ]] && { skip=1; break; }
+        done
+        [[ -n $skip ]] || diff+=("$i")
+    done
+
+    for d in ${diff[@]}; do
+        echo "Deleting ${d}..."
+        rm -rf ${BUNDLE_PATH}${d}
+    done
+}
+
+reset_options () {
+    echo "source ${OPTIONS_PATH}../basic.vim" > ${MAIN_OPTIONS_PATH}
+    echo "source ${OPTIONS_PATH}../extended.vim" >> ${MAIN_OPTIONS_PATH}
+    echo >> ${MAIN_OPTIONS_PATH}
+    echo '" Load pathogen paths' >> ${MAIN_OPTIONS_PATH}
+    echo "call pathogen#infect('~/.vim/bundle/{}')" >> ${MAIN_OPTIONS_PATH} 
+    echo >> ${MAIN_OPTIONS_PATH}
+    echo '" Load plugins settings' >> ${MAIN_OPTIONS_PATH}
+
+    if [ ! -d ${OPTIONS_PATH} ]; then
+        mkdir ${OPTIONS_PATH}
+    fi
+}
+
+create_options_for () {
+    plugin=$1
+
+    plugin_name=`echo "${plugin}" | cut -d "/" -f 5`
+    name=`echo ${plugin_name} | cut -d "." -f 1`.vim
+
+    FILE_NAME="${OPTIONS_PATH}${name}"
+    if [ ! -f  ${FILE_NAME} ]; then
+        touch ${FILE_NAME}
+    fi
+
+    echo "source ${OPTIONS_PATH}${name}" >> ${MAIN_OPTIONS_PATH}
+}
+
+clone_from_git () {
+    plugin=$1
+
+    name=`echo "${plugin}" | cut -d "/" -f 5`
+
+    if [ -d ${BUNDLE_PATH}${name} ]; then
+        echo "Updating ${name}..."
+        (cd ${BUNDLE_PATH}${name} && git pull -q)
+    else
+        echo "Installing ${name}..."
+        (cd ${BUNDLE_PATH} && git clone -q ${plugin})
+    fi
+
+    create_options_for ${plugin}
+}
+
+reset_plugins
+reset_options
+for plugin in ${plugins[@]}; do
+    clone_from_git ${plugin}
+done
+
+

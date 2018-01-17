@@ -25,3 +25,4 @@ nmap <silent> <leader>n :silent :nohlsearch<cr>
 
 " Make sure that CTRL-A (used by gnu screen) is redefined
 noremap <leader>inc <C-A>
+
