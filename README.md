@@ -9,8 +9,9 @@ Quite simply this is a vim configuration which will setup all the necessary Go d
 
 Fork the repo, and then clone it to `~/.vim_go_runtime`. Once done, just run installation script:
 
-    git clone git@github.com:farazdagi/vim-go-ide.git ~/.vim_go_runtime
-    sh ~/.vim_go_runtime/bin/install
+    git clone git@github.com:farazdagi/vim-go-ide.git 
+    cd vim-go-ide
+    make 
 
 **NOTE:** You system's Vim configuration will NOT be changed i.e. it is safe to install.
 
