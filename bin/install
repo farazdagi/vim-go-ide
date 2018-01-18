@@ -9,6 +9,9 @@ plugins=(
     https://github.com/morhetz/gruvbox
     https://github.com/mileszs/ack.vim 
     https://github.com/Shougo/deoplete.nvim
+    https://github.com/zchee/deoplete-go
+    https://github.com/roxma/nvim-yarp
+    https://github.com/roxma/vim-hug-neovim-rpc
     https://github.com/scrooloose/nerdtree
     https://github.com/tpope/vim-fugitive
     https://github.com/scrooloose/nerdcommenter
