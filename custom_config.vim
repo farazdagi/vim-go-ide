@@ -5,6 +5,8 @@ set nocompatible
 
 command! MakeTags !ctags -R .
 
+colorscheme gruvbox
+
 cnoreabbrev Ack Ack!
 nnoremap <Leader>a :Ack!<Space>
 
@@ -15,11 +17,6 @@ filetype plugin on
 " FINDING FILES:
 set path+=**
 set wildmenu
-
-" behavior(all runtime snippets are disabled).
-let g:neosnippet#disable_runtime_snippets = {
-\   '_' : 1,
-\ }
 
 " disable arrows
 noremap <Up> <NOP>
@@ -49,5 +46,3 @@ let g:go_highlight_extra_types = 1
 let g:go_highlight_fields = 1
 let g:go_highlight_build_constraints = 1
 
-let g:neosnippet#enable_snipmate_compatibility = 1
-let g:neosnippet#snippets_directory='~/.vim/bundle/vim-snippets/snippets'

@@ -6,10 +6,10 @@ MAIN_OPTIONS_PATH=${CURRENT_DIR}'/../vimrc/main.vim'
 OPTIONS_PATH=${CURRENT_DIR}'/../vimrc/plugins/'
 
 plugins=(
+    https://github.com/morhetz/gruvbox
     https://github.com/mileszs/ack.vim 
     https://github.com/Shougo/deoplete.nvim
     https://github.com/scrooloose/nerdtree
-    https://github.com/godlygeek/csapprox
     https://github.com/tpope/vim-fugitive
     https://github.com/scrooloose/nerdcommenter
     https://github.com/airblade/vim-gitgutter
@@ -46,6 +46,7 @@ reset_options () {
     echo >> ${MAIN_OPTIONS_PATH}
     echo '" Load pathogen paths' >> ${MAIN_OPTIONS_PATH}
     echo "call pathogen#infect('~/.vim/bundle/{}')" >> ${MAIN_OPTIONS_PATH} 
+    echo "call pathogen#helptags()" >> ${MAIN_OPTIONS_PATH}
     echo >> ${MAIN_OPTIONS_PATH}
     echo '" Load plugins settings' >> ${MAIN_OPTIONS_PATH}
 
